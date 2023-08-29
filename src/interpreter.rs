@@ -14,8 +14,8 @@ impl Interpreter {
         let mut errors = Vec::new();
         let mut line_address = 0;
 
-
-        // todo: separate into 2 loops, first one for all labels, second one for instructions
+        let mut instruction_lines = Vec::new();
+        
         for line in program.lines() {
             let class = Decoder::classify(line);
 
@@ -24,15 +24,22 @@ impl Interpreter {
                     labels.insert(label, line_address);
                 },
                 LineClassification::Instruction(instruction) => {
-                    let maybe_instruction = Decoder::decode(&instruction, &labels, line_address);
-
-                    match maybe_instruction {
-                        Ok(instruction) => instructions.push(instruction),
-                        Err(msg) => errors.push((line_address, msg)) 
-                    };
+                    instruction_lines.push(instruction);
+                    line_address += 4;
                 },
                 LineClassification::Empty => {},
             }
+        }  
+
+        let mut line_address = 0;
+
+        for instruction in instruction_lines {
+            let maybe_instruction = Decoder::decode(&instruction, &labels, line_address);
+
+            match maybe_instruction {
+                Ok(instruction) => instructions.push(instruction),
+                Err(msg) => errors.push((line_address, msg)) 
+            };
 
             line_address += 4;
         }   
