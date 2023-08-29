@@ -35,4 +35,8 @@ impl RvMachine {
         // let mut class = Decoder::classify(instruction);
         // decoder.decode()
     }
+
+    pub fn run(&mut self) -> impl Iterator<Item = eeric::RegistersSnapshot> {
+        self.core.run()
+    }
 }

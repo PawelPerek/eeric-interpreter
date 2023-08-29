@@ -1,5 +1,5 @@
 [package]
-name = "rv-interpreter"
+name = "eeric-interpreter"
 version = "0.0.0"
 edition = "2021"
 
@@ -8,6 +8,8 @@ crate-type = ["rlib", "cdylib"]
 
 [profile.release]
 lto = true
+opt-level = 's'
+codegen-units = 1
 
 [dependencies]
 eeric = "0.0.4"

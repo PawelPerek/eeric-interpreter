@@ -19,6 +19,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "eeric-interpreter"
+version = "0.0.0"
+dependencies = [
+ "eeric",
+]
+
+[[package]]
 name = "either"
 version = "1.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -40,11 +47,4 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f30b0abd723be7e2ffca1272140fac1a2f084c77ec3e123c192b66af1ee9e6c2"
 dependencies = [
  "autocfg",
-]
-
-[[package]]
-name = "rv-interpreter"
-version = "0.0.0"
-dependencies = [
- "eeric",
 ]
