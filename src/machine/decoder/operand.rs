@@ -131,6 +131,18 @@ impl IntegerParser {
     }
 }
 
+pub struct CsrParser;
+
+impl CsrParser {
+    pub fn parse_csrr_format(csrr: &str) -> Result<eeric::Format::Csrr, String> {
+        todo!()
+    }
+
+    pub fn parse_csri_format(csri: &str) -> Result<eeric::Format::Csri, String> {
+        todo!()
+    }
+}
+
 pub struct FloatParser;
 
 impl FloatParser {
@@ -193,51 +205,156 @@ impl FloatParser {
     }
 }
 
-
-
-
-enum VectorOperand {
+pub enum VectorOperand {
     Register(usize),
     Mask
 }
 
-pub fn parse_vector_operand(op: String) -> Result<VectorOperand, String> {
-    use VectorOperand::*;
-    
-    match op.as_str() {
-        "v0.t" => Ok(Mask),
-        "v0"   => Ok(Register(0)),
-        "v1"   => Ok(Register(1)),
-        "v2"   => Ok(Register(2)),
-        "v3"   => Ok(Register(3)),
-        "v4"   => Ok(Register(4)),
-        "v5"   => Ok(Register(5)),
-        "v6"   => Ok(Register(6)),
-        "v7"   => Ok(Register(7)),
-        "v8"   => Ok(Register(8)),
-        "v9"   => Ok(Register(9)),
-        "v10"  => Ok(Register(10)),
-        "v11"  => Ok(Register(11)),
-        "v12"  => Ok(Register(12)),
-        "v13"  => Ok(Register(13)),
-        "v14"  => Ok(Register(14)),
-        "v15"  => Ok(Register(15)),
-        "v16"  => Ok(Register(16)),
-        "v17"  => Ok(Register(17)),
-        "v18"  => Ok(Register(18)),
-        "v19"  => Ok(Register(19)),
-        "v20"  => Ok(Register(20)),
-        "v21"  => Ok(Register(21)),
-        "v22"  => Ok(Register(22)),
-        "v23"  => Ok(Register(23)),
-        "v24"  => Ok(Register(24)),
-        "v25"  => Ok(Register(25)),
-        "v26"  => Ok(Register(26)),
-        "v27"  => Ok(Register(27)),
-        "v28"  => Ok(Register(28)),
-        "v29"  => Ok(Register(29)),
-        "v30"  => Ok(Register(30)),
-        "v31"  => Ok(Register(31)),
-        _              => Err(op)   
+pub struct VectorParser;
+
+impl VectorParser {
+    pub fn parse_vsetvli_format(vsetvli: &str) -> Result<eeric::Format::Vsetvli, String> {
+        todo!()
+    }
+
+    pub fn parse_vsetivli_format(vsetivli: &str) -> Result<eeric::Format::Vsetivli, String> {
+        todo!()
+    }
+
+    pub fn parse_vsetvl_format(vsetvl: &str) -> Result<eeric::Format::Vsetvl, String> {
+        todo!()
+    }
+
+    pub fn parse_vl_format(vl: &str) -> Result<eeric::Format::Vl, String> {
+        todo!()
+    }
+
+    pub fn parse_vls_format(vls: &str) -> Result<eeric::Format::Vls, String> {
+        todo!()
+    }
+
+    pub fn parse_vlx_format(vlx: &str) -> Result<eeric::Format::Vlx, String> {
+        todo!()
+    }
+
+    pub fn parse_vlr_format(vlr: &str) -> Result<eeric::Format::Vlr, String> {
+        todo!()
+    }
+
+    pub fn parse_vs_format(vs: &str) -> Result<eeric::Format::Vs, String> {
+        todo!()
+    }
+
+    pub fn parse_vss_format(vss: &str) -> Result<eeric::Format::Vss, String> {
+        todo!()
+    }
+
+    pub fn parse_vsx_format(vsx: &str) -> Result<eeric::Format::Vsx, String> {
+        todo!()
+    }
+
+    pub fn parse_vsr_format(vsr: &str) -> Result<eeric::Format::Vsr, String> {
+        todo!()
+    }
+
+    pub fn parse_opivv_format(opivv: &str) -> Result<eeric::Format::Opivv, String> {
+        todo!()
+    }
+
+    pub fn parse_opivx_format(opivx: &str) -> Result<eeric::Format::Opivx, String> {
+        todo!()
+    }
+
+    pub fn parse_opivi_format(opivi: &str) -> Result<eeric::Format::Opivi, String> {
+        todo!()
+    }
+
+    pub fn parse_opmvv_format(opmvv: &str) -> Result<eeric::Format::Opmvv, String> {
+        todo!()
+    }
+
+    pub fn parse_opmvx_format(opmvx: &str) -> Result<eeric::Format::Opmvx, String> {
+        todo!()
+    }
+
+    pub fn parse_vwxunary0_format(vwxunary0: &str) -> Result<eeric::Format::Vwxunary0, String> {
+        todo!()
+    }
+
+    pub fn parse_vrxunary0_format(vrxunary0: &str) -> Result<eeric::Format::Vrxunary0, String> {
+        todo!()
+    }
+
+    pub fn parse_vxunary0_format(vxunary0: &str) -> Result<eeric::Format::Vxunary0, String> {
+        todo!()
+    }
+
+    pub fn parse_vmunary0_format(vmunary0: &str) -> Result<eeric::Format::Vmunary0, String> {
+        todo!()
+    }
+
+    pub fn parse_opfvv_format(opfvv: &str) -> Result<eeric::Format::Opfvv, String> {
+        todo!()
+    }
+
+    pub fn parse_opfvf_format(opfvf: &str) -> Result<eeric::Format::Opfvf, String> {
+        todo!()
+    }
+
+    pub fn parse_vwfunary0_format(vwfunary0: &str) -> Result<eeric::Format::Vwfunary0, String> {
+        todo!()
+    }
+
+    pub fn parse_vrfunary0_format(vrfunary0: &str) -> Result<eeric::Format::Vrfunary0, String> {
+        todo!()
+    }
+
+    pub fn parse_vfunary0_format(vfunary0: &str) -> Result<eeric::Format::Vfunary0, String> {
+        todo!()
+    }
+
+    pub fn parse_vfunary1_format(vfunary1: &str) -> Result<eeric::Format::Vfunary1, String> {
+        todo!()
+    }
+
+    pub fn parse_vector_operand(op: String) -> Result<VectorOperand, String> {
+        use VectorOperand::*;
+        
+        match op.as_str() {
+            "v0.t" => Ok(Mask),
+            "v0"   => Ok(Register(0)),
+            "v1"   => Ok(Register(1)),
+            "v2"   => Ok(Register(2)),
+            "v3"   => Ok(Register(3)),
+            "v4"   => Ok(Register(4)),
+            "v5"   => Ok(Register(5)),
+            "v6"   => Ok(Register(6)),
+            "v7"   => Ok(Register(7)),
+            "v8"   => Ok(Register(8)),
+            "v9"   => Ok(Register(9)),
+            "v10"  => Ok(Register(10)),
+            "v11"  => Ok(Register(11)),
+            "v12"  => Ok(Register(12)),
+            "v13"  => Ok(Register(13)),
+            "v14"  => Ok(Register(14)),
+            "v15"  => Ok(Register(15)),
+            "v16"  => Ok(Register(16)),
+            "v17"  => Ok(Register(17)),
+            "v18"  => Ok(Register(18)),
+            "v19"  => Ok(Register(19)),
+            "v20"  => Ok(Register(20)),
+            "v21"  => Ok(Register(21)),
+            "v22"  => Ok(Register(22)),
+            "v23"  => Ok(Register(23)),
+            "v24"  => Ok(Register(24)),
+            "v25"  => Ok(Register(25)),
+            "v26"  => Ok(Register(26)),
+            "v27"  => Ok(Register(27)),
+            "v28"  => Ok(Register(28)),
+            "v29"  => Ok(Register(29)),
+            "v30"  => Ok(Register(30)),
+            "v31"  => Ok(Register(31)),
+            _              => Err(op)   
+        }
     }
 }

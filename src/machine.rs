@@ -29,7 +29,10 @@ impl RvMachine {
             line_address += 4;
         }
 
-        let mut class = Decoder::classify(instruction);
-        decoder.decode()
+        todo!()
+
+
+        // let mut class = Decoder::classify(instruction);
+        // decoder.decode()
     }
 }
