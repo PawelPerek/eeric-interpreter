@@ -2,6 +2,8 @@
 name = "eeric-interpreter"
 version = "0.0.0"
 edition = "2021"
+description = "A front-end abstraction layer over eeric"
+license = "MIT"
 
 [lib]
 crate-type = ["rlib", "cdylib"]
