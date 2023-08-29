@@ -1,7 +1,9 @@
+use eeric::prelude::*;
+
 pub struct IntegerParser;
 
 impl IntegerParser {
-    pub fn parse_r_format(r: &str) -> Result<eeric::Format::R, String> {
+    pub fn parse_r_format(r: &str) -> Result<format::R, String> {
         let tokens: Vec<&str> = r.split(", ").collect();
 
         if tokens.len() != 3 {
@@ -16,10 +18,10 @@ impl IntegerParser {
         let rs1 = Self::parse_operand(rs1)?;
         let rs2 = Self::parse_operand(rs2)?;
 
-        Ok(eeric::Format::R { rd, rs1, rs2 })
+        Ok(format::R { rd, rs1, rs2 })
     }
 
-    pub fn parse_i_format(i: &str) -> Result<eeric::Format::I, String> {
+    pub fn parse_i_format(i: &str) -> Result<format::I, String> {
         let tokens: Vec<&str> = i.split(", ").collect();
 
         if tokens.len() != 3 {
@@ -34,10 +36,10 @@ impl IntegerParser {
         let rs1 = Self::parse_operand(rs1)?;
         let imm = Self::parse_immediate(imm)?;
 
-        Ok(eeric::Format::I { rd, rs1, imm12: imm })
+        Ok(format::I { rd, rs1, imm12: imm })
     }
 
-    pub fn parse_s_format(s: &str) -> Result<eeric::Format::S, String> {
+    pub fn parse_s_format(s: &str) -> Result<format::S, String> {
         let tokens: Vec<&str> = s.split(", ").collect();
 
         if tokens.len() != 2 {
@@ -65,10 +67,10 @@ impl IntegerParser {
         let rs2 = Self::parse_operand(rs2)?;
         let imm = Self::parse_immediate(imm)?;
 
-        Ok(eeric::Format::S { rs1, rs2, imm12: imm })
+        Ok(format::S { rs1, rs2, imm12: imm })
     }
 
-    pub fn parse_u_format(u: &str) -> Result<eeric::Format::U, String> {
+    pub fn parse_u_format(u: &str) -> Result<format::U, String> {
         let tokens: Vec<&str> = u.split(", ").collect();
 
         if tokens.len() != 2 {
@@ -81,7 +83,7 @@ impl IntegerParser {
         let rd = Self::parse_operand(rd)?;
         let imm = Self::parse_immediate(imm)?;
 
-        Ok(eeric::Format::U { rd, imm20: imm })
+        Ok(format::U { rd, imm20: imm })
     }
 
     pub(self) fn parse_operand(op_str: &str) -> Result<usize, String> {
@@ -134,11 +136,11 @@ impl IntegerParser {
 pub struct CsrParser;
 
 impl CsrParser {
-    pub fn parse_csrr_format(csrr: &str) -> Result<eeric::Format::Csrr, String> {
+    pub fn parse_csrr_format(csrr: &str) -> Result<format::Csrr, String> {
         todo!()
     }
 
-    pub fn parse_csri_format(csri: &str) -> Result<eeric::Format::Csri, String> {
+    pub fn parse_csri_format(csri: &str) -> Result<format::Csri, String> {
         todo!()
     }
 }
@@ -146,7 +148,7 @@ impl CsrParser {
 pub struct FloatParser;
 
 impl FloatParser {
-    pub fn parse_r4_format(r: &str) -> Result<eeric::Format::R4, String> {
+    pub fn parse_r4_format(r: &str) -> Result<format::R4, String> {
         let tokens: Vec<&str> = r.split(", ").collect();
 
         if tokens.len() != 4 {
@@ -163,7 +165,7 @@ impl FloatParser {
         let rs2 = Self::parse_operand(rs2)?;
         let rs3 = Self::parse_operand(rs3)?;
 
-        Ok(eeric::Format::R4 { rd, rs1, rs2, rs3 })
+        Ok(format::R4 { rd, rs1, rs2, rs3 })
     }
 
     pub(self) fn parse_operand(op_str: &str) -> Result<usize, String> {
@@ -213,107 +215,107 @@ pub enum VectorOperand {
 pub struct VectorParser;
 
 impl VectorParser {
-    pub fn parse_vsetvli_format(vsetvli: &str) -> Result<eeric::Format::Vsetvli, String> {
+    pub fn parse_vsetvli_format(vsetvli: &str) -> Result<format::Vsetvli, String> {
         todo!()
     }
 
-    pub fn parse_vsetivli_format(vsetivli: &str) -> Result<eeric::Format::Vsetivli, String> {
+    pub fn parse_vsetivli_format(vsetivli: &str) -> Result<format::Vsetivli, String> {
         todo!()
     }
 
-    pub fn parse_vsetvl_format(vsetvl: &str) -> Result<eeric::Format::Vsetvl, String> {
+    pub fn parse_vsetvl_format(vsetvl: &str) -> Result<format::Vsetvl, String> {
         todo!()
     }
 
-    pub fn parse_vl_format(vl: &str) -> Result<eeric::Format::Vl, String> {
+    pub fn parse_vl_format(vl: &str) -> Result<format::Vl, String> {
         todo!()
     }
 
-    pub fn parse_vls_format(vls: &str) -> Result<eeric::Format::Vls, String> {
+    pub fn parse_vls_format(vls: &str) -> Result<format::Vls, String> {
         todo!()
     }
 
-    pub fn parse_vlx_format(vlx: &str) -> Result<eeric::Format::Vlx, String> {
+    pub fn parse_vlx_format(vlx: &str) -> Result<format::Vlx, String> {
         todo!()
     }
 
-    pub fn parse_vlr_format(vlr: &str) -> Result<eeric::Format::Vlr, String> {
+    pub fn parse_vlr_format(vlr: &str) -> Result<format::Vlr, String> {
         todo!()
     }
 
-    pub fn parse_vs_format(vs: &str) -> Result<eeric::Format::Vs, String> {
+    pub fn parse_vs_format(vs: &str) -> Result<format::Vs, String> {
         todo!()
     }
 
-    pub fn parse_vss_format(vss: &str) -> Result<eeric::Format::Vss, String> {
+    pub fn parse_vss_format(vss: &str) -> Result<format::Vss, String> {
         todo!()
     }
 
-    pub fn parse_vsx_format(vsx: &str) -> Result<eeric::Format::Vsx, String> {
+    pub fn parse_vsx_format(vsx: &str) -> Result<format::Vsx, String> {
         todo!()
     }
 
-    pub fn parse_vsr_format(vsr: &str) -> Result<eeric::Format::Vsr, String> {
+    pub fn parse_vsr_format(vsr: &str) -> Result<format::Vsr, String> {
         todo!()
     }
 
-    pub fn parse_opivv_format(opivv: &str) -> Result<eeric::Format::Opivv, String> {
+    pub fn parse_opivv_format(opivv: &str) -> Result<format::Opivv, String> {
         todo!()
     }
 
-    pub fn parse_opivx_format(opivx: &str) -> Result<eeric::Format::Opivx, String> {
+    pub fn parse_opivx_format(opivx: &str) -> Result<format::Opivx, String> {
         todo!()
     }
 
-    pub fn parse_opivi_format(opivi: &str) -> Result<eeric::Format::Opivi, String> {
+    pub fn parse_opivi_format(opivi: &str) -> Result<format::Opivi, String> {
         todo!()
     }
 
-    pub fn parse_opmvv_format(opmvv: &str) -> Result<eeric::Format::Opmvv, String> {
+    pub fn parse_opmvv_format(opmvv: &str) -> Result<format::Opmvv, String> {
         todo!()
     }
 
-    pub fn parse_opmvx_format(opmvx: &str) -> Result<eeric::Format::Opmvx, String> {
+    pub fn parse_opmvx_format(opmvx: &str) -> Result<format::Opmvx, String> {
         todo!()
     }
 
-    pub fn parse_vwxunary0_format(vwxunary0: &str) -> Result<eeric::Format::Vwxunary0, String> {
+    pub fn parse_vwxunary0_format(vwxunary0: &str) -> Result<format::Vwxunary0, String> {
         todo!()
     }
 
-    pub fn parse_vrxunary0_format(vrxunary0: &str) -> Result<eeric::Format::Vrxunary0, String> {
+    pub fn parse_vrxunary0_format(vrxunary0: &str) -> Result<format::Vrxunary0, String> {
         todo!()
     }
 
-    pub fn parse_vxunary0_format(vxunary0: &str) -> Result<eeric::Format::Vxunary0, String> {
+    pub fn parse_vxunary0_format(vxunary0: &str) -> Result<format::Vxunary0, String> {
         todo!()
     }
 
-    pub fn parse_vmunary0_format(vmunary0: &str) -> Result<eeric::Format::Vmunary0, String> {
+    pub fn parse_vmunary0_format(vmunary0: &str) -> Result<format::Vmunary0, String> {
         todo!()
     }
 
-    pub fn parse_opfvv_format(opfvv: &str) -> Result<eeric::Format::Opfvv, String> {
+    pub fn parse_opfvv_format(opfvv: &str) -> Result<format::Opfvv, String> {
         todo!()
     }
 
-    pub fn parse_opfvf_format(opfvf: &str) -> Result<eeric::Format::Opfvf, String> {
+    pub fn parse_opfvf_format(opfvf: &str) -> Result<format::Opfvf, String> {
         todo!()
     }
 
-    pub fn parse_vwfunary0_format(vwfunary0: &str) -> Result<eeric::Format::Vwfunary0, String> {
+    pub fn parse_vwfunary0_format(vwfunary0: &str) -> Result<format::Vwfunary0, String> {
         todo!()
     }
 
-    pub fn parse_vrfunary0_format(vrfunary0: &str) -> Result<eeric::Format::Vrfunary0, String> {
+    pub fn parse_vrfunary0_format(vrfunary0: &str) -> Result<format::Vrfunary0, String> {
         todo!()
     }
 
-    pub fn parse_vfunary0_format(vfunary0: &str) -> Result<eeric::Format::Vfunary0, String> {
+    pub fn parse_vfunary0_format(vfunary0: &str) -> Result<format::Vfunary0, String> {
         todo!()
     }
 
-    pub fn parse_vfunary1_format(vfunary1: &str) -> Result<eeric::Format::Vfunary1, String> {
+    pub fn parse_vfunary1_format(vfunary1: &str) -> Result<format::Vfunary1, String> {
         todo!()
     }
 

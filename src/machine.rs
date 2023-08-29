@@ -1,42 +1,48 @@
 mod decoder;
 
 use std::collections::HashMap;
+use eeric::prelude::*;
 
 use decoder::Decoder;
 
+use crate::machine::decoder::LineClassification;
+
 pub struct RvMachine {
-    core: eeric::RvCore
+    core: RvCore
 }
 
 impl RvMachine {
     pub fn new() -> RvMachine {
         RvMachine {
-            core: eeric::RvCore::new_zeroed()
+            core: RvCore::new_zeroed()
         }
     }
 
-    pub fn compile(&mut self, program: String) -> Vec<eeric::Instruction> {
-        let mut labels: HashMap<&str, u64> = HashMap::new();
+    pub fn compile(&mut self, program: String) -> Vec<Instruction> {
+        let mut labels: HashMap<String, usize> = HashMap::new();
         let mut line_address = 0;
 
         for line in program.lines() {
-            let mut tokens = line.split_whitespace();
-            let first_token = tokens.next().unwrap();
-            if first_token.ends_with(":") {
-                let label = first_token.trim_end_matches(":");
-                labels.insert(label, line_address);
+            let class = Decoder::classify(line);
+
+            match class {
+                LineClassification::Label(label) => {
+                    labels.insert(label, line_address);
+                },
+                LineClassification::Instruction(instruction) => {
+                    Decoder::decode(&instruction, &labels);
+                },
+                LineClassification::Empty => {},
             }
+
             line_address += 4;
-        }
+    }   
+
 
         todo!()
-
-
-        // let mut class = Decoder::classify(instruction);
-        // decoder.decode()
     }
 
-    pub fn run(&mut self) -> impl Iterator<Item = eeric::RegistersSnapshot> {
+    pub fn run(&mut self) -> impl Iterator<Item = RegistersSnapshot> + '_ {
         self.core.run()
     }
 }

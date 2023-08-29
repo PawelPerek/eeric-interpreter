@@ -1,34 +1,43 @@
 mod operand;
 
+use std::collections::HashMap;
+
 use eeric::prelude::*;
 use Instruction::*;
-use format as F;
 use operand::{IntegerParser, CsrParser, FloatParser, VectorParser};
 
 
 pub struct Decoder;
 
 pub enum LineClassification {
-    Instruction,
-    Label,
+    Instruction(String),
+    Label(String),
     Empty
 }
 
 impl Decoder {
-    pub fn classify(line: String) -> LineClassification {
-        let trimmed_line = line.trim();
+    // TODO: proper numeric label support
+    // See: https://docs.oracle.com/cd/E19120-01/open.solaris/817-5477/esqat/index.html
+    pub fn classify(line: &str) -> LineClassification {
+        let trimmed_line = line
+            .split("#")
+            .next()
+            .unwrap_or("")
+            .trim();
 
         if trimmed_line.is_empty() {
             LineClassification::Empty
         } else if trimmed_line.ends_with(":") {
-            LineClassification::Label
+            LineClassification::Label(trimmed_line[..trimmed_line.len() - 1].to_string())
         } else {
-            LineClassification::Instruction
+            LineClassification::Instruction(trimmed_line.to_string())
         }
     }
 
-    pub fn decode(instruction_line: &str) -> eeric::Instruction {
-        let (mnemonic, operands) = Self::split(instruction_line);
+    pub fn decode(instruction_line: &str, labels: &HashMap<String, usize>) -> Instruction {
+        let (mnemonic, operands) = Self::split_instruction(instruction_line);
+
+        // TODO: pseudo-instructions support
 
         match mnemonic {
             "add" => Add(IntegerParser::parse_r_format(operands).unwrap()),
@@ -951,7 +960,7 @@ impl Decoder {
         }
     }
 
-    fn split(instruction_line: &str) -> (&str, &str) {
+    fn split_instruction(instruction_line: &str) -> (&str, &str) {
         let mut lane = instruction_line.splitn(2, char::is_whitespace);
         let mnemonic = lane.next().unwrap_or_default().trim();
         let operands = lane.next().unwrap_or_default().trim();
