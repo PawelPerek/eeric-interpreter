@@ -1,6 +1,6 @@
 [package]
 name = "eeric-interpreter"
-version = "0.0.4"
+version = "0.0.5"
 edition = "2021"
 description = "A front-end abstraction layer over eeric"
 license = "MIT"
@@ -10,8 +10,8 @@ crate-type = ["rlib", "cdylib"]
 
 [profile.release]
 lto = true
-opt-level = 's'
+opt-level = 'z'
 codegen-units = 1
 
 [dependencies]
-eeric = "0.0.10"
+eeric = "0.0.11"

@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use eeric::prelude::*;
 
 pub fn parse_r_format(r: &str) -> Result<format::R, String> {
@@ -67,6 +69,24 @@ pub fn parse_s_format(s: &str) -> Result<format::S, String> {
     Ok(format::S { rs1, rs2, imm12: imm })
 }
 
+pub fn parse_branch_format(s: &str, labels: &HashMap<String, usize>) -> Result<format::S, String> {
+    let tokens: Vec<&str> = s.split(", ").collect();
+
+    if tokens.len() != 3 {
+        return Err("Expected format: 'rs1, rs2, label'".to_owned());
+    }
+
+    let rs1 = tokens[0];
+    let rs2 = tokens[1];
+    let label = tokens[2];
+
+    let rs1 = parse_operand(rs1)?;
+    let rs2 = parse_operand(rs2)?;
+    let label_addr = parse_label(label, labels)?;
+
+    Ok(format::S { rs1, rs2, imm12: label_addr as u64 })
+}
+
 pub fn parse_u_format(u: &str) -> Result<format::U, String> {
     let tokens: Vec<&str> = u.split(", ").collect();
 
@@ -129,4 +149,8 @@ pub fn parse_immediate(imm_str: &str) -> Result<u64, String> {
     } else {
         imm_str.parse::<u64>().map_err(|e| format!("Error parsing immediate: {}", e))
     }
+}
+
+pub fn parse_label(label: &str, map: &HashMap<String, usize>) -> Result<usize, String> {
+    map.get(label).cloned().ok_or(format!("Did not find label {}", label))
 }

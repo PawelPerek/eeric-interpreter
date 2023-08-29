@@ -40,6 +40,7 @@ impl Decoder {
             parse_r_format as r,
             parse_i_format as i,
             parse_s_format as s,
+            parse_branch_format as b,
             parse_u_format as u
         };
 
@@ -132,12 +133,12 @@ impl Decoder {
             "sh" => Sh(s(operands)?),
             "sb" => Sb(s(operands)?),
 
-            "beq" => Beq(s(operands)?),
-            "bne" => Bne(s(operands)?),
-            "bge" => Bge(s(operands)?),
-            "bgeu" => Bgeu(s(operands)?),
-            "blt" => Blt(s(operands)?),
-            "bltu" => Bltu(s(operands)?),
+            "beq" => Beq(b(operands, &labels)?),
+            "bne" => Bne(b(operands, &labels)?),
+            "bge" => Bge(b(operands, &labels)?),
+            "bgeu" => Bgeu(b(operands, &labels)?),
+            "blt" => Blt(b(operands, &labels)?),
+            "bltu" => Bltu(b(operands, &labels)?),
             "jal" => Jal(u(operands)?),
             "jalr" => Jalr(i(operands)?),
 
