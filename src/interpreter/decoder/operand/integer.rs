@@ -84,7 +84,7 @@ pub fn parse_branch_format(s: &str, labels: &HashMap<String, usize>, current_lin
     let rs2 = parse_operand(rs2)?;
     let label_addr = parse_label(label, labels, current_line)?;
 
-    Ok(format::S { rs1, rs2, imm12: label_addr as u64 })
+    Ok(format::S { rs1, rs2, imm12: label_addr })
 }
 
 pub fn parse_u_format(u: &str) -> Result<format::U, String> {
@@ -143,18 +143,18 @@ pub fn parse_operand(op_str: &str) -> Result<usize, String> {
     Ok(operand)
 }
 
-pub fn parse_immediate(imm_str: &str) -> Result<u64, String> {
+pub fn parse_immediate(imm_str: &str) -> Result<i32, String> {
     if imm_str.starts_with("0x") || imm_str.starts_with("0X") {
-        u64::from_str_radix(&imm_str[2..], 16).map_err(|e| format!("Error parsing immediate: {}", e))
+        i32::from_str_radix(&imm_str[2..], 16).map_err(|e| format!("Error parsing immediate: {}", e))
     } else {
-        imm_str.parse::<u64>().map_err(|e| format!("Error parsing immediate: {}", e))
+        imm_str.parse::<i32>().map_err(|e| format!("Error parsing immediate: {}", e))
     }
 }
 
-pub fn parse_label(label: &str, map: &HashMap<String, usize>, current_line: usize) -> Result<usize, String> {
+pub fn parse_label(label: &str, map: &HashMap<String, usize>, current_line: usize) -> Result<i32, String> {
     map
         .get(label)
         .cloned()
-        .map(|addr| addr.wrapping_sub(current_line))
+        .map(|addr| addr.wrapping_sub(current_line) as i32)
         .ok_or(format!("Did not find label {}", label))
 }
