@@ -155,6 +155,6 @@ pub fn parse_label(label: &str, map: &HashMap<String, usize>, current_line: usiz
     map
         .get(label)
         .cloned()
-        .map(|addr| current_line.wrapping_sub(addr))
+        .map(|addr| addr.wrapping_sub(current_line))
         .ok_or(format!("Did not find label {}", label))
 }
