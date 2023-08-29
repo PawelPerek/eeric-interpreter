@@ -33,7 +33,7 @@ impl Decoder {
         }
     }
 
-    pub fn decode(instruction_line: &str, labels: &HashMap<String, usize>) -> Result<Instruction, String> {
+    pub fn decode(instruction_line: &str, labels: &HashMap<String, usize>, current_line: usize) -> Result<Instruction, String> {
         let (mnemonic, operands) = Self::split_instruction(instruction_line);
 
         use integer::{
@@ -133,12 +133,12 @@ impl Decoder {
             "sh" => Sh(s(operands)?),
             "sb" => Sb(s(operands)?),
 
-            "beq" => Beq(b(operands, &labels)?),
-            "bne" => Bne(b(operands, &labels)?),
-            "bge" => Bge(b(operands, &labels)?),
-            "bgeu" => Bgeu(b(operands, &labels)?),
-            "blt" => Blt(b(operands, &labels)?),
-            "bltu" => Bltu(b(operands, &labels)?),
+            "beq" => Beq(b(operands, &labels, current_line)?),
+            "bne" => Bne(b(operands, &labels, current_line)?),
+            "bge" => Bge(b(operands, &labels, current_line)?),
+            "bgeu" => Bgeu(b(operands, &labels, current_line)?),
+            "blt" => Blt(b(operands, &labels, current_line)?),
+            "bltu" => Bltu(b(operands, &labels, current_line)?),
             "jal" => Jal(u(operands)?),
             "jalr" => Jalr(i(operands)?),
 

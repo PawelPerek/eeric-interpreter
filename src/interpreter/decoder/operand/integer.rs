@@ -69,7 +69,7 @@ pub fn parse_s_format(s: &str) -> Result<format::S, String> {
     Ok(format::S { rs1, rs2, imm12: imm })
 }
 
-pub fn parse_branch_format(s: &str, labels: &HashMap<String, usize>) -> Result<format::S, String> {
+pub fn parse_branch_format(s: &str, labels: &HashMap<String, usize>, current_line: usize) -> Result<format::S, String> {
     let tokens: Vec<&str> = s.split(", ").collect();
 
     if tokens.len() != 3 {
@@ -82,7 +82,7 @@ pub fn parse_branch_format(s: &str, labels: &HashMap<String, usize>) -> Result<f
 
     let rs1 = parse_operand(rs1)?;
     let rs2 = parse_operand(rs2)?;
-    let label_addr = parse_label(label, labels)?;
+    let label_addr = parse_label(label, labels, current_line)?;
 
     Ok(format::S { rs1, rs2, imm12: label_addr as u64 })
 }
@@ -151,6 +151,10 @@ pub fn parse_immediate(imm_str: &str) -> Result<u64, String> {
     }
 }
 
-pub fn parse_label(label: &str, map: &HashMap<String, usize>) -> Result<usize, String> {
-    map.get(label).cloned().ok_or(format!("Did not find label {}", label))
+pub fn parse_label(label: &str, map: &HashMap<String, usize>, current_line: usize) -> Result<usize, String> {
+    map
+        .get(label)
+        .cloned()
+        .map(|addr| current_line.wrapping_sub(addr))
+        .ok_or(format!("Did not find label {}", label))
 }
