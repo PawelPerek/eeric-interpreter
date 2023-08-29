@@ -1,1 +1,1 @@
-pub use crate::machine::RvMachine;
+pub use crate::interpreter::Interpreter;

@@ -510,6 +510,11 @@ impl Decoder {
             "vl8re32.v" => Vlrv { nf: 8, eew: 32, data: VectorParser::parse_vlr_format(operands).unwrap()},
             "vl8re64.v" => Vlrv { nf: 8, eew: 64, data: VectorParser::parse_vlr_format(operands).unwrap()},
 
+            "vs1r.v" => Vsrv { nf: 1, data: VectorParser::parse_vsr_format(operands).unwrap()},
+            "vs2r.v" => Vsrv { nf: 2, data: VectorParser::parse_vsr_format(operands).unwrap()},
+            "vs4r.v" => Vsrv { nf: 4, data: VectorParser::parse_vsr_format(operands).unwrap()},
+            "vs8r.v" => Vsrv { nf: 8, data: VectorParser::parse_vsr_format(operands).unwrap()},
+
             "vadd.vv" => Vaddvv(VectorParser::parse_opivv_format(operands).unwrap()),
             "vadd.vx" => Vaddvx(VectorParser::parse_opivx_format(operands).unwrap()),
             "vadd.vi" => Vaddvi(VectorParser::parse_opivi_format(operands).unwrap()),

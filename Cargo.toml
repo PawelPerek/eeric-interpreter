@@ -1,6 +1,6 @@
 [package]
 name = "eeric-interpreter"
-version = "0.0.0"
+version = "0.0.1"
 edition = "2021"
 description = "A front-end abstraction layer over eeric"
 license = "MIT"
@@ -14,4 +14,4 @@ opt-level = 's'
 codegen-units = 1
 
 [dependencies]
-eeric = "0.0.5"
+eeric = "0.0.7"

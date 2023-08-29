@@ -3,23 +3,14 @@ mod decoder;
 use std::collections::HashMap;
 use eeric::prelude::*;
 
-use decoder::Decoder;
+use decoder::{ Decoder, LineClassification };
 
-use crate::machine::decoder::LineClassification;
+pub struct Interpreter;
 
-pub struct RvMachine {
-    core: RvCore
-}
-
-impl RvMachine {
-    pub fn new() -> RvMachine {
-        RvMachine {
-            core: RvCore::new_zeroed()
-        }
-    }
-
-    pub fn compile(&mut self, program: String) -> Vec<Instruction> {
+impl Interpreter {
+    pub fn compile(program: String) -> Vec<Instruction> {
         let mut labels: HashMap<String, usize> = HashMap::new();
+        let mut instructions = Vec::new();
         let mut line_address = 0;
 
         for line in program.lines() {
@@ -30,19 +21,15 @@ impl RvMachine {
                     labels.insert(label, line_address);
                 },
                 LineClassification::Instruction(instruction) => {
-                    Decoder::decode(&instruction, &labels);
+                    let instruction = Decoder::decode(&instruction, &labels);
+                    instructions.push(instruction);
                 },
                 LineClassification::Empty => {},
             }
 
             line_address += 4;
-    }   
-
-
-        todo!()
-    }
-
-    pub fn run(&mut self) -> impl Iterator<Item = RegistersSnapshot> + '_ {
-        self.core.run()
+        }   
+        
+        instructions
     }
 }

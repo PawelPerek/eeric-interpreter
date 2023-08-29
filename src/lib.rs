@@ -1,2 +1,2 @@
-mod machine;
+mod interpreter;
 pub mod prelude;
