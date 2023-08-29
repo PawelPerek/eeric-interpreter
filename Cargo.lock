@@ -10,9 +10,9 @@ checksum = "d468802bab17cbc0cc575e9b053f41e72aa36bfa6b7f55e3529ffa43161b97fa"
 
 [[package]]
 name = "eeric"
-version = "0.0.3"
+version = "0.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e90de246629b5c8954d42156c804a71c0b4920c4d4afab0df6e3100dd90759da"
+checksum = "a872e862a04746b706c5591427489d7e9903ae39bfd11477b7375b55067b8004"
 dependencies = [
  "itertools",
  "num-traits",
