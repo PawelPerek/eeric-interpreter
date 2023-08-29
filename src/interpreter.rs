@@ -8,9 +8,10 @@ use decoder::{ Decoder, LineClassification };
 pub struct Interpreter;
 
 impl Interpreter {
-    pub fn compile(program: String) -> Vec<Instruction> {
+    pub fn compile(program: String) -> Result<Vec<Instruction>, Vec<(usize, String)>> {
         let mut labels: HashMap<String, usize> = HashMap::new();
         let mut instructions = Vec::new();
+        let mut errors = Vec::new();
         let mut line_address = 0;
 
         for line in program.lines() {
@@ -21,8 +22,12 @@ impl Interpreter {
                     labels.insert(label, line_address);
                 },
                 LineClassification::Instruction(instruction) => {
-                    let instruction = Decoder::decode(&instruction, &labels);
-                    instructions.push(instruction);
+                    let maybe_instruction = Decoder::decode(&instruction, &labels);
+
+                    match maybe_instruction {
+                        Ok(instruction) => instructions.push(instruction),
+                        Err(msg) => errors.push((line_address, msg)) 
+                    };
                 },
                 LineClassification::Empty => {},
             }
@@ -30,6 +35,10 @@ impl Interpreter {
             line_address += 4;
         }   
         
-        instructions
+        if errors.is_empty() {
+            Ok(instructions)
+        } else {
+            Err(errors)
+        }
     }
 }
