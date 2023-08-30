@@ -39,6 +39,7 @@ impl Decoder {
         use integer::{
             parse_r_format as r,
             parse_i_format as i,
+            parse_load_format as l,
             parse_s_format as s,
             parse_branch_format as b,
             parse_u_format as u
@@ -121,13 +122,13 @@ impl Decoder {
             "srai" => Srai(i(operands)?),
             "sraiw" => Sraiw(i(operands)?),
 
-            "ld" => Ld(i(operands)?),
-            "lw" => Lw(i(operands)?),
-            "lh" => Lh(i(operands)?),
-            "lb" => Lb(i(operands)?),
-            "lwu" => Lwu(i(operands)?),
-            "lhu" => Lhu(i(operands)?),
-            "lbu" => Lbu(i(operands)?),
+            "ld" => Ld(l(operands)?),
+            "lw" => Lw(l(operands)?),
+            "lh" => Lh(l(operands)?),
+            "lb" => Lb(l(operands)?),
+            "lwu" => Lwu(l(operands)?),
+            "lhu" => Lhu(l(operands)?),
+            "lbu" => Lbu(l(operands)?),
             "sd" => Sd(s(operands)?),
             "sw" => Sw(s(operands)?),
             "sh" => Sh(s(operands)?),

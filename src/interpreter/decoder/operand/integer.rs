@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use eeric::prelude::*;
+use eeric::prelude::{*, format::I};
 
 pub fn parse_r_format(r: &str) -> Result<format::R, String> {
     let tokens: Vec<&str> = r.split(", ").collect();
@@ -38,11 +38,42 @@ pub fn parse_i_format(i: &str) -> Result<format::I, String> {
     Ok(format::I { rd, rs1, imm12: imm })
 }
 
+pub fn parse_load_format(i: &str) -> Result<format::I, String> {
+    let tokens: Vec<&str> = i.split(", ").collect();
+
+    if tokens.len() != 2 {
+        return Err("Expected format: 'rd, imm(rs1)'".to_string());
+    }
+
+    let rd = tokens[0].trim();
+    let imm_rs1 = tokens[1].trim();
+
+    if !imm_rs1.ends_with(")") {
+        return Err("Malformed format: missing closing ')'".to_string());
+    }
+
+    let inner_part = &imm_rs1[..imm_rs1.len() - 1];  // Remove the closing ')'
+    let parts: Vec<&str> = inner_part.split('(').collect();
+
+    if parts.len() != 2 {
+        return Err("Expected format: 'imm(rs1)' for the second part".to_string());
+    }
+
+    let imm = parts[0].trim();
+    let rs1 = parts[1].trim();
+
+    let rd = parse_operand(rd)?;
+    let rs1 = parse_operand(rs1)?;
+    let imm = parse_immediate(imm)?;
+
+    Ok(format::I { rd, rs1, imm12: imm })
+}
+
 pub fn parse_s_format(s: &str) -> Result<format::S, String> {
     let tokens: Vec<&str> = s.split(", ").collect();
 
     if tokens.len() != 2 {
-        return Err("Expected format: 'rs2, immediate(rs1)'".to_string());
+        return Err("Expected format: 'rs2, imm(rs1)'".to_string());
     }
 
     let rs2 = tokens[0].trim();
@@ -56,7 +87,7 @@ pub fn parse_s_format(s: &str) -> Result<format::S, String> {
     let parts: Vec<&str> = inner_part.split('(').collect();
 
     if parts.len() != 2 {
-        return Err("Expected format: 'immediate(rs1)' for the second part".to_string());
+        return Err("Expected format: 'imm(rs1)' for the second part".to_string());
     }
 
     let imm = parts[0].trim();
