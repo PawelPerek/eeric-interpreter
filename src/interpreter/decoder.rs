@@ -145,7 +145,7 @@ impl Decoder {
             "blt" => Blt(b(operands, &labels, current_address)?),
             "bltu" => Bltu(b(operands, &labels, current_address)?),
             "jal" => Jal(u(operands)?),
-            "jalr" => Jalr(i(operands)?),
+            "jalr" => Jalr(l(operands)?),
 
             "csrrw" => Csrrw(csrr(operands)?),
             "csrrs" => Csrrs(csrr(operands)?),
