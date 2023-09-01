@@ -1,23 +1,30 @@
 mod decoder;
 
-use std::collections::HashMap;
+use std::{collections::HashMap, hash::Hash};
 use eeric::prelude::*;
 
 use decoder::{ Decoder, LineClassification };
 
 pub struct Interpreter;
 
+pub struct CompilationResult {
+    instructions: Vec<Instruction>,
+    instructions_addresses: HashMap<usize, usize>
+}
+
 impl Interpreter {
-    pub fn compile(program: String) -> Result<Vec<Instruction>, Vec<(usize, String)>> {
-        let mut labels: HashMap<String, usize> = HashMap::new();
+    pub fn compile(program: String) -> Result<CompilationResult, HashMap<usize, String>> {
+        let mut labels = HashMap::new();
         let mut instructions = Vec::new();
-        let mut errors = Vec::new();
+        let mut instructions_addresses = HashMap::new();
         let mut line_address = 0;
+        let mut raw_line_address = 0;
 
         let mut instruction_lines = Vec::new();
         
         for line in program.lines() {
             let class = Decoder::classify(line);
+            raw_line_address += 4;
 
             match class {
                 LineClassification::Label(label) => {
@@ -26,26 +33,30 @@ impl Interpreter {
                 LineClassification::Instruction(instruction) => {
                     instruction_lines.push(instruction);
                     line_address += 4;
+
+                    instructions_addresses.insert(line_address, raw_line_address);
                 },
                 LineClassification::Empty => {},
             }
+
         }  
 
-        let mut line_address = 0;
+        let mut current_line = 0;
+        let mut errors = HashMap::new();
 
         for instruction in instruction_lines {
-            let maybe_instruction = Decoder::decode(&instruction, &labels, line_address);
+            let maybe_instruction = Decoder::decode(&instruction, &labels, current_line * 4);
 
             match maybe_instruction {
                 Ok(instruction) => instructions.push(instruction),
-                Err(msg) => errors.push((line_address, msg)) 
+                Err(msg) => { errors.insert(current_line, msg); }
             };
 
-            line_address += 4;
+            current_line += 1;
         }   
         
         if errors.is_empty() {
-            Ok(instructions)
+            Ok(CompilationResult { instructions, instructions_addresses })
         } else {
             Err(errors)
         }

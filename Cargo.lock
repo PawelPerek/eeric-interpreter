@@ -20,7 +20,7 @@ dependencies = [
 
 [[package]]
 name = "eeric-interpreter"
-version = "0.0.12"
+version = "0.0.13"
 dependencies = [
  "eeric",
 ]
