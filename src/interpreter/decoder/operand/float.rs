@@ -1,10 +1,10 @@
 use eeric::prelude::*;
 
-pub fn parse_r4_format(r: &str) -> Result<format::R4, String> {
-    let tokens: Vec<&str> = r.split(", ").collect();
+pub fn parse_r4_format(r4: &str) -> Result<format::R4, String> {
+    let tokens: Vec<&str> = r4.split(", ").collect();
 
     if tokens.len() != 4 {
-        return Err("Expected format: 'rd, rs1, rs2, rs3'".to_owned());
+        return Err(format!("Expected format: 'rd, rs1, rs2, rs3', got {} instead", r4));
     }
 
     let rd = tokens[0];

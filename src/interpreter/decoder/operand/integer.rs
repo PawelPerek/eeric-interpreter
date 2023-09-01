@@ -6,7 +6,7 @@ pub fn parse_r_format(r: &str) -> Result<format::R, String> {
     let tokens: Vec<&str> = r.split(", ").collect();
 
     if tokens.len() != 3 {
-        return Err("Expected format: 'rd, rs1, rs2'".to_owned());
+        return Err(format!("Expected format: 'rd, rs1, rs2', got {} instead", r));
     }
 
     let rd = tokens[0];
@@ -24,7 +24,7 @@ pub fn parse_i_format(i: &str) -> Result<format::I, String> {
     let tokens: Vec<&str> = i.split(", ").collect();
 
     if tokens.len() != 3 {
-        return Err("Expected format: 'rd, rs1, imm'".to_owned());
+        return Err(format!("Expected format: 'rd, rs1, imm', got {} instead", i));
     }
 
     let rd = tokens[0];
@@ -42,7 +42,7 @@ pub fn parse_load_format(i: &str) -> Result<format::I, String> {
     let tokens: Vec<&str> = i.split(", ").collect();
 
     if tokens.len() != 2 {
-        return Err("Expected format: 'rd, imm(rs1)'".to_string());
+        return Err(format!("Expected format: 'rd, imm(rs1)', got {} instead", i));
     }
 
     let rd = tokens[0].trim();
@@ -58,7 +58,7 @@ pub fn parse_s_format(s: &str) -> Result<format::S, String> {
     let tokens: Vec<&str> = s.split(", ").collect();
 
     if tokens.len() != 2 {
-        return Err("Expected format: 'rs2, imm(rs1)'".to_string());
+        return Err(format!("Expected format: 'rs2, imm(rs1)', got {} instead", s));
     }
 
     let rs2 = tokens[0].trim();
@@ -74,7 +74,7 @@ pub fn parse_branch_format(s: &str, labels: &HashMap<String, usize>, current_lin
     let tokens: Vec<&str> = s.split(", ").collect();
 
     if tokens.len() != 3 {
-        return Err("Expected format: 'rs1, rs2, label'".to_owned());
+        return Err(format!("Expected format: 'rs1, rs2, label', got {} instead", s));
     }
 
     let rs1 = tokens[0];
@@ -92,7 +92,7 @@ pub fn parse_u_format(u: &str) -> Result<format::U, String> {
     let tokens: Vec<&str> = u.split(", ").collect();
 
     if tokens.len() != 2 {
-        return Err("Expected format: 'rd, imm'".to_owned());
+        return Err(format!("Expected format: 'rd, imm', got {} instead", u));
     }
 
     let rd = tokens[0];
@@ -106,7 +106,7 @@ pub fn parse_u_format(u: &str) -> Result<format::U, String> {
 
 pub fn parse_offset_addr_operand(op: &str) -> Result<(i32, usize), String> {
     let Some(operand_addr) = op.find('(') else {
-        return Err("Expected format: 'imm(rs1)' for the address with offset".to_string());
+        return Err(format!("Expected format: 'imm(rs1)' for the address with offset, got {} instead", op));
     };
 
     let (imm, reg) = op.split_at(operand_addr);
