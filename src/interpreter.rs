@@ -1,6 +1,6 @@
 mod decoder;
 
-use std::{collections::HashMap, hash::Hash};
+use std::collections::HashMap;
 use eeric::prelude::*;
 
 use decoder::{ Decoder, LineClassification };
@@ -8,8 +8,8 @@ use decoder::{ Decoder, LineClassification };
 pub struct Interpreter;
 
 pub struct CompilationResult {
-    instructions: Vec<Instruction>,
-    instructions_addresses: HashMap<usize, usize>
+    pub instructions: Vec<Instruction>,
+    pub instructions_addresses: HashMap<usize, usize>
 }
 
 impl Interpreter {
@@ -22,6 +22,8 @@ impl Interpreter {
 
         let mut instruction_lines = Vec::new();
         
+        instructions_addresses.insert(0, 0);
+
         for line in program.lines() {
             let class = Decoder::classify(line);
             raw_line_address += 4;
