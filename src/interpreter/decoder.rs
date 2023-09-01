@@ -58,7 +58,9 @@ impl Decoder {
             parse_vsetvl_format as vsetvl,
             
             parse_vl_format as vl,
+            parse_vlm_format as vlm,
             parse_vs_format as vs,
+            parse_vsm_format as vsm,
             parse_vls_format as vls,
             parse_vss_format as vss,
             parse_vlx_format as vlx,
@@ -73,9 +75,11 @@ impl Decoder {
             parse_opmvv_format as opmvv,
             parse_opmvx_format as opmvx,
             
+            parse_vwxunary0_vmvxs_format as vmvxs,
             parse_vwxunary0_format as vwxunary0,
             parse_vrxunary0_format as vrxunary0,
             parse_vxunary0_format as vxunary0,
+            parse_vmunary0_vidv_format as vidv,
             parse_vmunary0_format as vmunary0,
 
             parse_opfvv_format as opfvv,
@@ -241,6 +245,9 @@ impl Decoder {
             "vse16.v" => Vsv { eew: 16, data: vs(operands)?},
             "vse32.v" => Vsv { eew: 32, data: vs(operands)?},
             "vse64.v" => Vsv { eew: 64, data: vs(operands)?},
+
+            "vlm.v" => Vlmv(vlm(operands)?),
+            "vsm.v" => Vsmv(vsm(operands)?),
 
             "vlse8.v" => Vlsv { eew: 8, data: vls(operands)?},
             "vlse16.v" => Vlsv { eew: 16, data: vls(operands)?},
@@ -750,7 +757,7 @@ impl Decoder {
 
             "vslide1down.vx" => Vslide1downvx(opmvx(operands)?),
 
-            "vmv.x.s" => Vmvxs(vwxunary0(operands)?),
+            "vmv.x.s" => Vmvxs(vmvxs(operands)?),
             "vcpop.m" => Vcpopm(vwxunary0(operands)?),
             "vfirst.m" => Vfirstm(vwxunary0(operands)?),
 
@@ -768,7 +775,7 @@ impl Decoder {
             "vmsof.m" => Vmsofm(vmunary0(operands)?),
             "vmsif.m" => Vmsifm(vmunary0(operands)?),
             "viota.m" => Viotam(vmunary0(operands)?),
-            "vid.v" => Vidv(vmunary0(operands)?),
+            "vid.v" => Vidv(vidv(operands)?),
 
             "vcompress.vm" => Vcompressvm(opmvv(operands)?),
 

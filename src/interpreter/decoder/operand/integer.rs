@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use eeric::prelude::{*, format::I};
+use eeric::prelude::*;
 
 pub fn parse_r_format(r: &str) -> Result<format::R, String> {
     let tokens: Vec<&str> = r.split(", ").collect();
@@ -48,23 +48,8 @@ pub fn parse_load_format(i: &str) -> Result<format::I, String> {
     let rd = tokens[0].trim();
     let imm_rs1 = tokens[1].trim();
 
-    if !imm_rs1.ends_with(")") {
-        return Err("Malformed format: missing closing ')'".to_string());
-    }
-
-    let inner_part = &imm_rs1[..imm_rs1.len() - 1];  // Remove the closing ')'
-    let parts: Vec<&str> = inner_part.split('(').collect();
-
-    if parts.len() != 2 {
-        return Err("Expected format: 'imm(rs1)' for the second part".to_string());
-    }
-
-    let imm = parts[0].trim();
-    let rs1 = parts[1].trim();
-
     let rd = parse_operand(rd)?;
-    let rs1 = parse_operand(rs1)?;
-    let imm = parse_immediate(imm)?;
+    let (imm, rs1) = parse_offset_addr_operand(imm_rs1)?;
 
     Ok(format::I { rd, rs1, imm12: imm })
 }
@@ -79,23 +64,8 @@ pub fn parse_s_format(s: &str) -> Result<format::S, String> {
     let rs2 = tokens[0].trim();
     let imm_rs1 = tokens[1].trim();
 
-    if !imm_rs1.ends_with(")") {
-        return Err("Malformed format: missing closing ')'".to_string());
-    }
-
-    let inner_part = &imm_rs1[..imm_rs1.len() - 1];  // Remove the closing ')'
-    let parts: Vec<&str> = inner_part.split('(').collect();
-
-    if parts.len() != 2 {
-        return Err("Expected format: 'imm(rs1)' for the second part".to_string());
-    }
-
-    let imm = parts[0].trim();
-    let rs1 = parts[1].trim();
-
-    let rs1 = parse_operand(rs1)?;
     let rs2 = parse_operand(rs2)?;
-    let imm = parse_immediate(imm)?;
+    let (imm, rs1) = parse_offset_addr_operand(imm_rs1)?;
 
     Ok(format::S { rs1, rs2, imm12: imm })
 }
@@ -134,8 +104,30 @@ pub fn parse_u_format(u: &str) -> Result<format::U, String> {
     Ok(format::U { rd, imm20: imm })
 }
 
-pub fn parse_operand(op_str: &str) -> Result<usize, String> {
-    let operand = match op_str {
+pub fn parse_offset_addr_operand(op: &str) -> Result<(i32, usize), String> {
+    let Some(operand_addr) = op.find('(') else {
+        return Err("Expected format: 'imm(rs1)' for the address with offset".to_string());
+    };
+
+    let (imm, reg) = op.split_at(operand_addr);
+
+    let imm = parse_immediate(imm)?;
+    let reg = parse_addr_operand(reg)?;
+
+    Ok((imm, reg))
+}
+
+pub fn parse_addr_operand(op: &str) -> Result<usize, String> {
+    if op.starts_with('(') && op.ends_with(')') {
+        let inner_op = &op[1..op.len() - 1];
+        parse_operand(inner_op)
+    } else {
+        Err(format!("Address operand {} is not wrapped in parentheses", op))
+    }
+}
+
+pub fn parse_operand(op: &str) -> Result<usize, String> {
+    let operand = match op {
         "x0"  | "zero"        => 0,
         "x1"  | "ra"          => 1,
         "x2"  | "sp"          => 2,
@@ -168,17 +160,21 @@ pub fn parse_operand(op_str: &str) -> Result<usize, String> {
         "x29" | "t4"          => 29,
         "x30" | "t5"          => 30,
         "x31" | "t6"          => 31,
-        _                     => return Err(format!("Incorrect integer operand: {}", op_str))   
+        _                     => return Err(format!("Incorrect integer operand: {}", op))   
     };
 
     Ok(operand)
 }
 
-pub fn parse_immediate(imm_str: &str) -> Result<i32, String> {
-    if imm_str.starts_with("0x") || imm_str.starts_with("0X") {
-        i32::from_str_radix(&imm_str[2..], 16).map_err(|e| format!("Error parsing immediate: {}", e))
+pub fn parse_immediate(imm: &str) -> Result<i32, String> {
+    if imm.starts_with("0x") || imm.starts_with("0X") {
+        i32::from_str_radix(&imm[2..], 16).map_err(|e| format!("Error parsing hexadecimal immediate: {}", e))
+    } else if imm.starts_with("0o") || imm.starts_with("0O") {
+        i32::from_str_radix(&imm[2..], 8).map_err(|e| format!("Error parsing octal immediate: {}", e))
+    } else if imm.starts_with("0b") || imm.starts_with("0B") {
+        i32::from_str_radix(&imm[2..], 2).map_err(|e| format!("Error parsing binary immediate: {}", e))
     } else {
-        imm_str.parse::<i32>().map_err(|e| format!("Error parsing immediate: {}", e))
+        imm.parse::<i32>().map_err(|e| format!("Error parsing immediate: {}", e))
     }
 }
 

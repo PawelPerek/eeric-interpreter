@@ -1,9 +1,10 @@
 [package]
 name = "eeric-interpreter"
-version = "0.0.11"
+version = "0.0.12"
 edition = "2021"
 description = "A front-end abstraction layer over eeric"
 license = "MIT"
+repository = "https://github.com/PawelPerek/eeric-interpreter"
 
 [lib]
 crate-type = ["rlib", "cdylib"]
@@ -14,4 +15,4 @@ opt-level = 'z'
 codegen-units = 1
 
 [dependencies]
-eeric = "0.0.15"
+eeric = "0.0.18"
