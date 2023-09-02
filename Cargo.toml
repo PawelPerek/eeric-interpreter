@@ -15,4 +15,4 @@ opt-level = 'z'
 codegen-units = 1
 
 [dependencies]
-eeric = "0.0.25"
+eeric = "0.0.26"
