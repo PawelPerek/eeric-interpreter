@@ -1,6 +1,6 @@
 [package]
 name = "eeric-interpreter"
-version = "0.0.17"
+version = "0.0.18"
 edition = "2021"
 description = "A front-end abstraction layer over eeric"
 license = "MIT"
