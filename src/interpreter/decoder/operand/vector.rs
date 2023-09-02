@@ -18,7 +18,8 @@ fn construct_vtype((sew, lmul, tail, mask): (SEW, LMUL, MaskBehavior, MaskBehavi
         LMUL::M1 => 0b000,
         LMUL::M2 => 0b001,
         LMUL::M4 => 0b010,
-        LMUL::M8 => 0b011
+        LMUL::M8 => 0b011,
+        LMUL::M16 => return Err("Cannot construct vtype with LMUL=16".to_owned())
     };
 
     use MaskBehavior as MB;
