@@ -2,7 +2,7 @@ mod operand;
 
 use std::collections::HashMap;
 
-use eeric::prelude::*;
+use eeric::prelude::{*, format::*};
 use Instruction::*;
 use operand::{integer, float, csr, vector};
 
@@ -1024,6 +1024,278 @@ impl Decoder {
             "vfwnmsac.vv" => Vfwnmsacvv(opfvv_fma(operands)?),
             "vfwnmsac.vf" => Vfwnmsacvf(opfvf_fma(operands)?),
 
+            // Pseudoinstructions
+
+            "nop" => Addi(I {rd: 0, rs1: 0, imm12: 0}),
+            "li" => {
+                let (reg, imm) = integer::pseudo::parse_op_imm_format(operands)?;
+                
+                if imm < 4096{
+                    Addi(I {rd: reg, rs1: 0, imm12: imm})
+                } else if imm == 4096 {
+                    Lui(U {rd: reg, imm20: imm})
+                } else {
+                    Fusion(
+                        Box::new(Lui(U {rd: reg, imm20: imm >> 12})),
+                        Box::new(Addi(I {rd: reg, rs1: reg, imm12: imm & 0xfff}))
+                    )
+                }
+            },
+            "mv" => {
+                let (rd, rs1) = integer::pseudo::parse_op_op_format(operands)?;
+                Addi(I {rd, rs1, imm12: 0})
+            },
+            "not" => {
+                let (rd, rs1) = integer::pseudo::parse_op_op_format(operands)?;
+                Xori(I {rd, rs1, imm12: -1})
+            },
+            "neg" => {
+                let (rd, rs2) = integer::pseudo::parse_op_op_format(operands)?;
+                Sub(R {rd, rs1: 0, rs2})
+            },
+            "negw" => {
+                let (rd, rs2) = integer::pseudo::parse_op_op_format(operands)?;
+                Subw(R {rd, rs1: 0, rs2})
+            },
+            "sext.b" => {
+                let (rd, rs1) = integer::pseudo::parse_op_op_format(operands)?;
+                Fusion(
+                    Box::new(Slli(I { rd, rs1, imm12: 64 - 8 })),
+                    Box::new(Srai(I { rd, rs1, imm12: 64 - 8 }))
+                )
+            },
+            "sext.h" => {
+                let (rd, rs1) = integer::pseudo::parse_op_op_format(operands)?;
+                Fusion(
+                    Box::new(Slli(I { rd, rs1, imm12: 64 - 16 })),
+                    Box::new(Srai(I { rd, rs1, imm12: 64 - 16 }))
+                )
+            },
+            "sext.w" => {
+                let (rd, rs1) = integer::pseudo::parse_op_op_format(operands)?;
+                Addiw(I { rd, rs1, imm12: 0 })
+            },
+            "zext.b" => {
+                let (rd, rs1) = integer::pseudo::parse_op_op_format(operands)?;
+                Andi(I { rd: rd, rs1: rs1, imm12: 0xff })
+            },
+            "zext.h" => {
+                let (rd, rs1) = integer::pseudo::parse_op_op_format(operands)?;
+                Fusion(
+                    Box::new(Slli(I { rd, rs1, imm12: 64 - 16 })),
+                    Box::new(Srli(I { rd, rs1: rd, imm12: 64 - 16 }))
+                )
+            },
+            "zext.w" => {
+                let (rd, rs1) = integer::pseudo::parse_op_op_format(operands)?;
+                Fusion(
+                    Box::new(Slli(I { rd, rs1, imm12: 64 - 32 })),
+                    Box::new(Srli(I { rd, rs1: rd, imm12: 64 - 32 }))
+                )
+            },
+            "seqz" => {
+                let (rd, rs1) = integer::pseudo::parse_op_op_format(operands)?;
+                Sltiu(I { rd, rs1, imm12: 1 })
+            },
+            "snez" => {
+                let (rd, rs1) = integer::pseudo::parse_op_op_format(operands)?;
+                Sltu(R { rd, rs1, rs2: 0 })
+            },
+            "sltz" => {
+                let (rd, rs1) = integer::pseudo::parse_op_op_format(operands)?;
+                Slt(R { rd, rs1, rs2: 0 })
+            },
+            "sgtz" => {
+                let (rd, rs1) = integer::pseudo::parse_op_op_format(operands)?;
+                Slt(R { rd, rs1: 0, rs2: rs1 })
+            },
+            "fmv.s" => {
+                let (rd, rs1) = float::pseudo::parse_op_op_format(operands)?;
+                Fsgnjs(R { rd, rs1, rs2: rs1 })
+            },
+            "fabs.s" => {
+                let (rd, rs1) = float::pseudo::parse_op_op_format(operands)?;
+                Fsgnjxs(R { rd, rs1, rs2: rs1 })
+            },
+            "fneg.s" => {
+                let (rd, rs1) = float::pseudo::parse_op_op_format(operands)?;
+                Fsgnjns(R { rd, rs1, rs2: rs1 })
+            },
+            "fmv.d" => {
+                let (rd, rs1) = float::pseudo::parse_op_op_format(operands)?;
+                Fsgnjd(R { rd, rs1, rs2: rs1 })
+            },
+            "fabs.d" => {
+                let (rd, rs1) = float::pseudo::parse_op_op_format(operands)?;
+                Fsgnjxd(R { rd, rs1, rs2: rs1 })
+            },
+            "fneg.d" => {
+                let (rd, rs1) = float::pseudo::parse_op_op_format(operands)?;
+                Fsgnjnd(R { rd, rs1, rs2: rs1 })
+            },
+            "beqz" => {
+                let (rs1, diff) = integer::pseudo::parse_op_label_format(operands, &labels, current_address)?;
+                Beq(S { rs1, rs2: 0, imm12: diff })
+            },
+            "bnez" => {
+                let (rs1, diff) = integer::pseudo::parse_op_label_format(operands, &labels, current_address)?;
+                Bne(S { rs1, rs2: 0, imm12: diff })
+            },
+            "blez" => {
+                let (rs1, diff) = integer::pseudo::parse_op_label_format(operands, &labels, current_address)?;
+                Bge(S { rs1, rs2: 0, imm12: diff })
+            },
+            "bgez" => {
+                let (rs1, diff) = integer::pseudo::parse_op_label_format(operands, &labels, current_address)?;
+                Bge(S { rs1, rs2: 0, imm12: diff })
+            },
+            "bltz" => {
+                let (rs1, diff) = integer::pseudo::parse_op_label_format(operands, &labels, current_address)?;
+                Blt(S { rs1, rs2: 0, imm12: diff })
+            },
+            "bgtz" => {
+                let (rs1, diff) = integer::pseudo::parse_op_label_format(operands, &labels, current_address)?;
+                Blt(S { rs1, rs2: 0, imm12: diff })
+            },
+            "bgt" => {
+                let (rs1, rs2, diff) = integer::pseudo::parse_op_op_label_format(operands, &labels, current_address)?;
+                Blt(S { rs1: rs2, rs2: rs1, imm12: diff })
+            },
+            "ble" => {
+                let (rs1, rs2, diff) = integer::pseudo::parse_op_op_label_format(operands, &labels, current_address)?;
+                Bge(S { rs1: rs2, rs2: rs1, imm12: diff })
+            },
+            "bgtu" => {
+                let (rs1, rs2, diff) = integer::pseudo::parse_op_op_label_format(operands, &labels, current_address)?;
+                Bltu(S { rs1: rs2, rs2: rs1, imm12: diff })
+            },
+            "bleu" => {
+                let (rs1, rs2, diff) = integer::pseudo::parse_op_op_label_format(operands, &labels, current_address)?;
+                Bgeu(S { rs1: rs2, rs2: rs1, imm12: diff })
+            },
+            "j" => {
+                let diff = integer::pseudo::parse_label_format(operands, &labels, current_address)?;
+                Jal(U { rd: 0, imm20: diff })
+            },
+            "jal" => {
+                // TODO: make it pattern matchable
+                let diff = integer::pseudo::parse_label_format(operands, &labels, current_address)?;
+                Jal(U { rd: 1, imm20: diff })
+            },
+            "jr" => {
+                let rs1 = integer::pseudo::parse_op_format(operands)?;
+                Jalr(I { rd: 0, rs1, imm12: 0 })
+            },
+            "jalr" => {
+                // TODO: make it pattern matchable
+                let rs1 = integer::pseudo::parse_op_format(operands)?;
+                Jalr(I { rd: 1, rs1, imm12: 0 })
+            },
+            "ret" => Jalr(I { rd: 0, rs1: 1, imm12: 0 }),
+            "call" => {
+                let diff = integer::pseudo::parse_label_format(operands, &labels, current_address)?;
+                Fusion(
+                    Box::new(Auipc(U { rd: 1, imm20:  diff >> 12 })), 
+                    Box::new(Jalr(I { rd: 1, rs1: 1, imm12: diff & 0xfff }))
+                )
+            },
+            "tail" => {
+                let diff = integer::pseudo::parse_label_format(operands, &labels, current_address)?;
+                Fusion(
+                    Box::new(Auipc(U { rd: 6, imm20:  diff >> 12 })), 
+                    Box::new(Jalr(I { rd: 0, rs1: 6, imm12: diff & 0xfff }))
+                )
+            },
+            "rdinstret" => {
+                let rd = integer::pseudo::parse_op_format(operands)?;
+                Csrrs(Csrr { rd, csr: alias::INSTRET, rs1: 0 })
+            },
+            "rdinstreth" => {
+                let rd = integer::pseudo::parse_op_format(operands)?;
+                Csrrs(Csrr { rd, csr: alias::INSTRETH, rs1: 0 })
+            },
+            "rdcycle" => {
+                let rd = integer::pseudo::parse_op_format(operands)?;
+                Csrrs(Csrr { rd, csr: alias::CYCLE, rs1: 0 })
+            },
+            "rdcycleh" => {
+                let rd = integer::pseudo::parse_op_format(operands)?;
+                Csrrs(Csrr { rd, csr: alias::CYCLEH, rs1: 0 })
+            },
+            "csrr" => {
+                let (rd, csr) = csr::pseudo::parse_op_csr_format(operands)?;
+                Csrrs(Csrr { rd, csr, rs1: 0 })
+            },
+            "csrw" => {
+                let (csr, rs1) = csr::pseudo::parse_csr_op_format(operands)?;
+                Csrrw(Csrr { rd: 0, csr, rs1 })
+            },
+            "csrs" => {
+                let (csr, rs1) = csr::pseudo::parse_csr_op_format(operands)?;
+                Csrrs(Csrr { rd: 0, csr, rs1 })
+            },
+            "csrc" => {
+                let (csr, rs1) = csr::pseudo::parse_csr_op_format(operands)?;
+                Csrrc(Csrr { rd: 0, csr, rs1 })
+            },
+            "frcsr" => {
+                let rd = integer::pseudo::parse_op_format(operands)?;
+                Csrrs(Csrr { rd, csr: alias::FCSR, rs1: 0 })
+            },
+            "fscsr" => {
+                let (rd, rs1) = integer::pseudo::parse_op_op_format(operands)?;
+                Csrrw(Csrr { rd: rd, csr: alias::FCSR, rs1 })
+            },
+            "fscsr" => {
+                // TODO: make it pattern matchable
+                let rs = integer::pseudo::parse_op_format(operands)?;
+                Csrrw(Csrr { rd: 0, csr: alias::FCSR, rs1: rs })
+            },
+            "frrm" => {
+                let rd = integer::pseudo::parse_op_format(operands)?;
+                Csrrs(Csrr { rd, csr: alias::FRM, rs1: 0 })
+            },
+            "fsrm" => {
+                let (rd, rs1) = integer::pseudo::parse_op_op_format(operands)?;
+                Csrrw(Csrr { rd: rd, csr: alias::FRM, rs1 })
+            },
+            "fsrm" => {
+                // TODO: make it pattern matchable
+                let rs = integer::pseudo::parse_op_format(operands)?;
+                Csrrw(Csrr { rd: 0, csr: alias::FRM, rs1: rs })
+            },
+            "fsrmi" => {
+                let (rd, imm) = integer::pseudo::parse_op_imm_format(operands)?;
+                Csrrwi(Csri { rd: rd, csr: alias::FRM, uimm: imm as u32 as usize })
+            },
+            "fsrmi" => {
+                // TODO: make it pattern matchable
+                let imm = integer::pseudo::parse_imm_format(operands)?;
+                Csrrwi(Csri { rd: 0, csr: alias::FRM, uimm: imm as u32 as usize })
+            },
+            "frflags" => {
+                let rd = integer::pseudo::parse_op_format(operands)?;
+                Csrrs(Csrr { rd, csr: alias::FFLAGS, rs1: 0 })
+            },
+            "fsflags" => {
+                let (rd, rs1) = integer::pseudo::parse_op_op_format(operands)?;
+                Csrrw(Csrr { rd, csr: alias::FFLAGS, rs1 })
+            },
+            "fsflags" => {
+                // TODO: make it pattern matchable
+                let rs1 = integer::pseudo::parse_op_format(operands)?;
+                Csrrw(Csrr { rd: 0, csr: alias::FFLAGS, rs1 })
+            }
+            "fsflagsi" => {
+                let (rd, imm) = integer::pseudo::parse_op_imm_format(operands)?;
+                Csrrwi(Csri { rd, csr: alias::FFLAGS, uimm: imm as u32 as usize })
+            },
+            "fsflagsi" => {
+                // TODO: make it pattern matchable
+                let imm = integer::pseudo::parse_imm_format(operands)?;
+                Csrrwi(Csri { rd: 0, csr: alias::FFLAGS, uimm: imm as u32 as usize })
+            },
+            
             _ => return Err(format!("Unknown mnemonic: {}", mnemonic))
         };
 

@@ -57,3 +57,21 @@ pub fn parse_operand(op_str: &str) -> Result<usize, String> {
         _              => Err(format!("Incorrect float operand: {}", op_str))  
     }
 }
+
+pub mod pseudo {
+    pub fn parse_op_op_format(op_op: &str) -> Result<(usize, usize), String> {
+        let tokens: Vec<&str> = op_op.split(", ").collect();
+
+        if tokens.len() != 2 {
+            return Err(format!("Expected format: 'freg1, freg2', got {} instead", op_op));
+        }
+
+        let reg1 = tokens[0];
+        let reg2 = tokens[1];
+
+        let reg1 = super::parse_operand(reg1)?;
+        let reg2 = super::parse_operand(reg2)?;
+
+        Ok((reg1, reg2))
+    }
+}
