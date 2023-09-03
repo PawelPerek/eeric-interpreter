@@ -312,6 +312,34 @@ pub fn parse_opmvx_format(opmvx: &str) -> Result<format::Opmvx, String> {
     Ok(format::Opmvx { dest: vd, vs2, rs1, vm })
 }
 
+pub fn parse_opmvv_fma_format(opmvv: &str) -> Result<format::Opmvv, String> {
+    let tokens: Vec<&str> = opmvv.split(", ").collect();
+    if tokens.len() != 3 && tokens.len() != 4 {
+        return Err(format!("Expected format: 'vd, vs1, vs2, [vm]', got {} instead", opmvv));
+    }
+
+    let vd = parse_operand(tokens[0])?.as_register()?;
+    let vs1 = parse_operand(tokens[1])?.as_register()?;
+    let vs2 = parse_operand(tokens[2])?.as_register()?;
+    let vm = tokens.len() == 4 && parse_operand(tokens[3])?.as_mask()? == ();
+
+    Ok(format::Opmvv { dest: vd, vs2, vs1, vm })
+}
+
+pub fn parse_opmvx_fma_format(opmvx: &str) -> Result<format::Opmvx, String> {
+    let tokens: Vec<&str> = opmvx.split(", ").collect();
+    if tokens.len() != 3 && tokens.len() != 4 {
+        return Err(format!("Expected format: 'vd, rs1, vs2, [vm]', got {} instead", opmvx));
+    }
+
+    let vd = parse_operand(tokens[0])?.as_register()?;
+    let rs1 = integer::parse_operand(tokens[1])?;
+    let vs2 = parse_operand(tokens[2])?.as_register()?;
+    let vm = tokens.len() == 4 && parse_operand(tokens[3])?.as_mask()? == ();
+
+    Ok(format::Opmvx { dest: vd, vs2, rs1, vm })
+}
+
 pub fn parse_vwxunary0_vmvxs_format(vwxunary0: &str) -> Result<format::Vwxunary0, String> {
     let tokens: Vec<&str> = vwxunary0.split(", ").collect();
     if tokens.len() != 2 {
@@ -410,6 +438,34 @@ pub fn parse_opfvf_format(opfvf: &str) -> Result<format::Opfvf, String> {
     let vd = parse_operand(tokens[0])?.as_register()?;
     let vs2 = parse_operand(tokens[1])?.as_register()?;
     let rs1 = float::parse_operand(tokens[2])?;
+    let vm = tokens.len() == 4 && parse_operand(tokens[3])?.as_mask()? == ();
+
+    Ok(format::Opfvf { vd, vs2, rs1, vm })
+}
+
+pub fn parse_opfvv_fma_format(opfvv: &str) -> Result<format::Opfvv, String> {
+    let tokens: Vec<&str> = opfvv.split(", ").collect();
+    if tokens.len() != 3 && tokens.len() != 4 {
+        return Err(format!("Expected format: 'vd, vs1, vs2, [vm]', got {} instead", opfvv));
+    }
+
+    let vd = parse_operand(tokens[0])?.as_register()?;
+    let vs1 = parse_operand(tokens[1])?.as_register()?;
+    let vs2 = parse_operand(tokens[2])?.as_register()?;
+    let vm = tokens.len() == 4 && parse_operand(tokens[3])?.as_mask()? == ();
+
+    Ok(format::Opfvv { dest: vd, vs2, vs1, vm })
+}
+
+pub fn parse_opfvf_fma_format(opfvf: &str) -> Result<format::Opfvf, String> {
+    let tokens: Vec<&str> = opfvf.split(", ").collect();
+    if tokens.len() != 3 && tokens.len() != 4 {
+        return Err(format!("Expected format: 'vd, rs1, vs2, [vm]', got {} instead", opfvf));
+    }
+
+    let vd = parse_operand(tokens[0])?.as_register()?;
+    let rs1 = float::parse_operand(tokens[2])?;
+    let vs2 = parse_operand(tokens[1])?.as_register()?;
     let vm = tokens.len() == 4 && parse_operand(tokens[3])?.as_mask()? == ();
 
     Ok(format::Opfvf { vd, vs2, rs1, vm })

@@ -74,6 +74,9 @@ impl Decoder {
 
             parse_opmvv_format as opmvv,
             parse_opmvx_format as opmvx,
+
+            parse_opmvv_fma_format as opmvv_fma,
+            parse_opmvx_fma_format as opmvx_fma,
             
             parse_vwxunary0_vmvxs_format as vmvxs,
             parse_vwxunary0_format as vwxunary0,
@@ -84,6 +87,9 @@ impl Decoder {
 
             parse_opfvv_format as opfvv,
             parse_opfvf_format as opfvf,
+
+            parse_opfvv_fma_format as opfvv_fma,
+            parse_opfvf_fma_format as opfvf_fma,
 
             parse_vwfunary0_format as vwfunary0,
             parse_vrfunary0_format as vrfunary0,
@@ -812,17 +818,17 @@ impl Decoder {
             "vmulh.vv" => Vmulhvv(opmvv(operands)?),
             "vmulh.vx" => Vmulhvx(opmvx(operands)?),
 
-            "vmadd.vv" => Vmaddvv(opmvv(operands)?),
-            "vmadd.vx" => Vmaddvx(opmvx(operands)?),
+            "vmadd.vv" => Vmaddvv(opmvv_fma(operands)?),
+            "vmadd.vx" => Vmaddvx(opmvx_fma(operands)?),
 
-            "vnmsub.vv" => Vnmsubvv(opmvv(operands)?),
-            "vnmsub.vx" => Vnmsubvx(opmvx(operands)?),
+            "vnmsub.vv" => Vnmsubvv(opmvv_fma(operands)?),
+            "vnmsub.vx" => Vnmsubvx(opmvx_fma(operands)?),
 
-            "vmacc.vv" => Vmaccvv(opmvv(operands)?),
-            "vmacc.vx" => Vmaccvx(opmvx(operands)?),
+            "vmacc.vv" => Vmaccvv(opmvv_fma(operands)?),
+            "vmacc.vx" => Vmaccvx(opmvx_fma(operands)?),
 
-            "vnmsac.vv" => Vnmsacvv(opmvv(operands)?),
-            "vnmsac.vx" => Vnmsacvx(opmvx(operands)?),
+            "vnmsac.vv" => Vnmsacvv(opmvv_fma(operands)?),
+            "vnmsac.vx" => Vnmsacvx(opmvx_fma(operands)?),
 
             "vwaddu.vv" => Vwadduvv(opmvv(operands)?),
             "vwaddu.vx" => Vwadduvx(opmvx(operands)?),
@@ -857,16 +863,16 @@ impl Decoder {
             "vwmul.vv" => Vwmulvv(opmvv(operands)?),
             "vwmul.vx" => Vwmulvx(opmvx(operands)?),
 
-            "vwmaccu.vv" => Vwmaccuvv(opmvv(operands)?),
-            "vwmaccu.vx" => Vwmaccuvx(opmvx(operands)?),
+            "vwmaccu.vv" => Vwmaccuvv(opmvv_fma(operands)?),
+            "vwmaccu.vx" => Vwmaccuvx(opmvx_fma(operands)?),
 
-            "vwmacc.vv" => Vwmaccvv(opmvv(operands)?),
-            "vwmacc.vx" => Vwmaccvx(opmvx(operands)?),
+            "vwmacc.vv" => Vwmaccvv(opmvv_fma(operands)?),
+            "vwmacc.vx" => Vwmaccvx(opmvx_fma(operands)?),
 
-            "vwmaccus.vx" => Vwmaccusvx(opmvx(operands)?),
+            "vwmaccus.vx" => Vwmaccusvx(opmvx_fma(operands)?),
 
-            "vwmaccsu.vv" => Vwmaccsuvv(opmvv(operands)?),
-            "vwmaccsu.vx" => Vwmaccsuvx(opmvx(operands)?),
+            "vwmaccsu.vv" => Vwmaccsuvv(opmvv_fma(operands)?),
+            "vwmaccsu.vx" => Vwmaccsuvx(opmvx_fma(operands)?),
 
             "vfadd.vv" => Vfaddvv(opfvv(operands)?),
             "vfadd.vf" => Vfaddvf(opfvf(operands)?),
@@ -963,29 +969,29 @@ impl Decoder {
 
             "vfrsub.vf" => Vfrsubvf(opfvf(operands)?),
 
-            "vfmadd.vv" => Vfmaddvv(opfvv(operands)?),
-            "vfmadd.vf" => Vfmaddvf(opfvf(operands)?),
+            "vfmadd.vv" => Vfmaddvv(opfvv_fma(operands)?),
+            "vfmadd.vf" => Vfmaddvf(opfvf_fma(operands)?),
 
-            "vfnmadd.vv" => Vfnmaddvv(opfvv(operands)?),
-            "vfnmadd.vf" => Vfnmaddvf(opfvf(operands)?),
+            "vfnmadd.vv" => Vfnmaddvv(opfvv_fma(operands)?),
+            "vfnmadd.vf" => Vfnmaddvf(opfvf_fma(operands)?),
 
-            "vfmsub.vv" => Vfmsubvv(opfvv(operands)?),
-            "vfmsub.vf" => Vfmsubvf(opfvf(operands)?),
+            "vfmsub.vv" => Vfmsubvv(opfvv_fma(operands)?),
+            "vfmsub.vf" => Vfmsubvf(opfvf_fma(operands)?),
 
-            "vfnmsub.vv" => Vfnmsubvv(opfvv(operands)?),
-            "vfnmsub.vf" => Vfnmsubvf(opfvf(operands)?),
+            "vfnmsub.vv" => Vfnmsubvv(opfvv_fma(operands)?),
+            "vfnmsub.vf" => Vfnmsubvf(opfvf_fma(operands)?),
 
-            "vfmacc.vv" => Vfmaccvv(opfvv(operands)?),
-            "vfmacc.vf" => Vfmaccvf(opfvf(operands)?),
+            "vfmacc.vv" => Vfmaccvv(opfvv_fma(operands)?),
+            "vfmacc.vf" => Vfmaccvf(opfvf_fma(operands)?),
 
-            "vfnmacc.vv" => Vfnmaccvv(opfvv(operands)?),
-            "vfnmacc.vf" => Vfnmaccvf(opfvf(operands)?),
+            "vfnmacc.vv" => Vfnmaccvv(opfvv_fma(operands)?),
+            "vfnmacc.vf" => Vfnmaccvf(opfvf_fma(operands)?),
 
-            "vfmsac.vv" => Vfmsacvv(opfvv(operands)?),
-            "vfmsac.vf" => Vfmsacvf(opfvf(operands)?),
+            "vfmsac.vv" => Vfmsacvv(opfvv_fma(operands)?),
+            "vfmsac.vf" => Vfmsacvf(opfvf_fma(operands)?),
 
-            "vfnmsac.vv" => Vfnmsacvv(opfvv(operands)?),
-            "vfnmsac.vf" => Vfnmsacvf(opfvf(operands)?),
+            "vfnmsac.vv" => Vfnmsacvv(opfvv_fma(operands)?),
+            "vfnmsac.vf" => Vfnmsacvf(opfvf_fma(operands)?),
 
             "vfwadd.vv" => Vfwaddvv(opfvv(operands)?),
             "vfwadd.vf" => Vfwaddvf(opfvf(operands)?),
@@ -1006,17 +1012,17 @@ impl Decoder {
             "vfwmul.vv" => Vfwmulvv(opfvv(operands)?),
             "vfwmul.vf" => Vfwmulvf(opfvf(operands)?),
 
-            "vfwmacc.vv" => Vfwmaccvv(opfvv(operands)?),
-            "vfwmacc.vf" => Vfwmaccvf(opfvf(operands)?),
+            "vfwmacc.vv" => Vfwmaccvv(opfvv_fma(operands)?),
+            "vfwmacc.vf" => Vfwmaccvf(opfvf_fma(operands)?),
 
-            "vfwnmacc.vv" => Vfwnmaccvv(opfvv(operands)?),
-            "vfwnmacc.vf" => Vfwnmaccvf(opfvf(operands)?),
+            "vfwnmacc.vv" => Vfwnmaccvv(opfvv_fma(operands)?),
+            "vfwnmacc.vf" => Vfwnmaccvf(opfvf_fma(operands)?),
 
-            "vfwmsac.vv" => Vfwmsacvv(opfvv(operands)?),
-            "vfwmsac.vf" => Vfwmsacvf(opfvf(operands)?),
+            "vfwmsac.vv" => Vfwmsacvv(opfvv_fma(operands)?),
+            "vfwmsac.vf" => Vfwmsacvf(opfvf_fma(operands)?),
 
-            "vfwnmsac.vv" => Vfwnmsacvv(opfvv(operands)?),
-            "vfwnmsac.vf" => Vfwnmsacvf(opfvf(operands)?),
+            "vfwnmsac.vv" => Vfwnmsacvv(opfvv_fma(operands)?),
+            "vfwnmsac.vf" => Vfwnmsacvf(opfvf_fma(operands)?),
 
             _ => return Err(format!("Unknown mnemonic: {}", mnemonic))
         };
