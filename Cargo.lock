@@ -76,9 +76,9 @@ dependencies = [
 
 [[package]]
 name = "eeric"
-version = "0.0.21"
+version = "0.0.28"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e7b105c4433b470a51d02dea6db028199d451e8fcbdbef36fe729fd8b9ce0778"
+checksum = "2fbaad29e717ac507717ae6dc82994a412241dfb2c6d0d71c4b6693ddaa36014"
 dependencies = [
  "derive_builder",
  "itertools",
@@ -87,7 +87,7 @@ dependencies = [
 
 [[package]]
 name = "eeric-interpreter"
-version = "0.0.19"
+version = "0.0.23"
 dependencies = [
  "eeric",
 ]
