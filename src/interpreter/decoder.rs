@@ -15,8 +15,6 @@ pub enum LineClassification {
 }
 
 impl Decoder {
-    // TODO: proper numeric label support
-    // See: https://docs.oracle.com/cd/E19120-01/open.solaris/817-5477/esqat/index.html
     pub fn classify(line: &str) -> LineClassification {
         let trimmed_line = line
             .split("#")
@@ -96,8 +94,6 @@ impl Decoder {
             parse_vfunary0_format as vfunary0,
             parse_vfunary1_format as vfunary1
         };
-
-        // TODO: pseudo-instructions support
 
         let instruction = match mnemonic {
             "add" => Add(r(operands)?),
@@ -1178,7 +1174,6 @@ impl Decoder {
                 Jal(U { rd: 0, imm20: diff })
             },
             "jal" => {
-                // TODO: make it pattern matchable
                 let diff = integer::pseudo::parse_label_format(operands, &labels, current_address)?;
                 Jal(U { rd: 1, imm20: diff })
             },
@@ -1187,7 +1182,6 @@ impl Decoder {
                 Jalr(I { rd: 0, rs1, imm12: 0 })
             },
             "jalr" => {
-                // TODO: make it pattern matchable
                 let rs1 = integer::pseudo::parse_op_format(operands)?;
                 Jalr(I { rd: 1, rs1, imm12: 0 })
             },
@@ -1247,7 +1241,6 @@ impl Decoder {
                 Csrrw(Csrr { rd: rd, csr: alias::FCSR, rs1 })
             },
             "fscsr" => {
-                // TODO: make it pattern matchable
                 let rs = integer::pseudo::parse_op_format(operands)?;
                 Csrrw(Csrr { rd: 0, csr: alias::FCSR, rs1: rs })
             },
@@ -1260,7 +1253,6 @@ impl Decoder {
                 Csrrw(Csrr { rd: rd, csr: alias::FRM, rs1 })
             },
             "fsrm" => {
-                // TODO: make it pattern matchable
                 let rs = integer::pseudo::parse_op_format(operands)?;
                 Csrrw(Csrr { rd: 0, csr: alias::FRM, rs1: rs })
             },
@@ -1269,7 +1261,6 @@ impl Decoder {
                 Csrrwi(Csri { rd: rd, csr: alias::FRM, uimm: imm as u32 as usize })
             },
             "fsrmi" => {
-                // TODO: make it pattern matchable
                 let imm = integer::pseudo::parse_imm_format(operands)?;
                 Csrrwi(Csri { rd: 0, csr: alias::FRM, uimm: imm as u32 as usize })
             },
@@ -1282,7 +1273,6 @@ impl Decoder {
                 Csrrw(Csrr { rd, csr: alias::FFLAGS, rs1 })
             },
             "fsflags" => {
-                // TODO: make it pattern matchable
                 let rs1 = integer::pseudo::parse_op_format(operands)?;
                 Csrrw(Csrr { rd: 0, csr: alias::FFLAGS, rs1 })
             }
@@ -1291,7 +1281,6 @@ impl Decoder {
                 Csrrwi(Csri { rd, csr: alias::FFLAGS, uimm: imm as u32 as usize })
             },
             "fsflagsi" => {
-                // TODO: make it pattern matchable
                 let imm = integer::pseudo::parse_imm_format(operands)?;
                 Csrrwi(Csri { rd: 0, csr: alias::FFLAGS, uimm: imm as u32 as usize })
             },
