@@ -464,8 +464,8 @@ pub fn parse_opfvf_fma_format(opfvf: &str) -> Result<format::Opfvf, String> {
     }
 
     let vd = parse_operand(tokens[0])?.as_register()?;
-    let rs1 = float::parse_operand(tokens[2])?;
-    let vs2 = parse_operand(tokens[1])?.as_register()?;
+    let rs1 = float::parse_operand(tokens[1])?;
+    let vs2 = parse_operand(tokens[2])?.as_register()?;
     let vm = tokens.len() == 4 && parse_operand(tokens[3])?.as_mask()? == ();
 
     Ok(format::Opfvf { vd, vs2, rs1, vm })
