@@ -6,7 +6,10 @@ pub fn parse_csrr_format(csrr: &str) -> Result<format::Csrr, String> {
     let tokens: Vec<&str> = csrr.split(", ").collect();
 
     if tokens.len() != 3 {
-        return Err(format!("Expected format: 'rd, csr, rs1', got {} instead", csrr));
+        return Err(format!(
+            "Expected format: 'rd, csr, rs1', got {} instead",
+            csrr
+        ));
     }
 
     let rd = tokens[0];
@@ -24,7 +27,10 @@ pub fn parse_csri_format(csri: &str) -> Result<format::Csri, String> {
     let tokens: Vec<&str> = csri.split(", ").collect();
 
     if tokens.len() != 3 {
-        return Err(format!("Expected format: 'rd, csr, imm', got {} instead", csri));
+        return Err(format!(
+            "Expected format: 'rd, csr, imm', got {} instead",
+            csri
+        ));
     }
 
     let rd = tokens[0];
@@ -35,11 +41,14 @@ pub fn parse_csri_format(csri: &str) -> Result<format::Csri, String> {
     let csr = parse_operand(csr)?;
     let uimm = integer::parse_immediate(imm)?;
 
-    Ok(format::Csri { rd, csr, uimm: uimm as u32 as usize })
+    Ok(format::Csri {
+        rd,
+        csr,
+        uimm: uimm as u32 as usize,
+    })
 }
 
 fn parse_operand(op: &str) -> Result<usize, String> {
-
     let operand = match op {
         "instret" => alias::INSTRET,
         "instreth" => alias::INSTRETH,
@@ -60,7 +69,7 @@ fn parse_operand(op: &str) -> Result<usize, String> {
         "vxrm" => alias::VXRM,
         "vxsat" => alias::VXSAT,
         "vcsr" => alias::VCSR,
-        _ => return Err(format!("Incorrect or unsupported CSR operand: {}", op))   
+        _ => return Err(format!("Incorrect or unsupported CSR operand: {}", op)),
     };
 
     Ok(operand)
@@ -71,7 +80,10 @@ pub mod pseudo {
         let tokens: Vec<&str> = op_csr.split(", ").collect();
 
         if tokens.len() != 2 {
-            return Err(format!("Expected format: 'xreg, csr', got {} instead", op_csr));
+            return Err(format!(
+                "Expected format: 'xreg, csr', got {} instead",
+                op_csr
+            ));
         }
 
         let reg = tokens[0];
@@ -87,7 +99,10 @@ pub mod pseudo {
         let tokens: Vec<&str> = csr_op.split(", ").collect();
 
         if tokens.len() != 2 {
-            return Err(format!("Expected format: 'csr, xreg', got {} instead", csr_op));
+            return Err(format!(
+                "Expected format: 'csr, xreg', got {} instead",
+                csr_op
+            ));
         }
 
         let csr = tokens[0];

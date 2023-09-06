@@ -1,15 +1,15 @@
 mod decoder;
 
-use std::collections::HashMap;
 use eeric::prelude::*;
+use std::collections::HashMap;
 
-use decoder::{ Decoder, LineClassification };
+use decoder::{Decoder, LineClassification};
 
 pub struct Interpreter;
 
 pub struct CompilationResult {
     pub instructions: Vec<Instruction>,
-    pub instructions_addresses: HashMap<usize, usize>
+    pub instructions_addresses: HashMap<usize, usize>,
 }
 
 impl Interpreter {
@@ -21,7 +21,7 @@ impl Interpreter {
         let mut raw_line_address = 0;
 
         let mut instruction_lines = Vec::new();
-        
+
         instructions_addresses.insert(0, 0);
 
         for line in program.lines() {
@@ -31,34 +31,35 @@ impl Interpreter {
             match class {
                 LineClassification::Label(label) => {
                     labels.insert(label, line_address);
-                },
+                }
                 LineClassification::Instruction(instruction) => {
                     instruction_lines.push(instruction);
                     line_address += 4;
 
                     instructions_addresses.insert(line_address, raw_line_address);
-                },
-                LineClassification::Empty => {},
+                }
+                LineClassification::Empty => {}
             }
+        }
 
-        }  
-
-        let mut current_line = 0;
         let mut errors = HashMap::new();
 
-        for instruction in instruction_lines {
+        for (current_line, instruction) in instruction_lines.into_iter().enumerate() {
             let maybe_instruction = Decoder::decode(&instruction, &labels, current_line * 4);
 
             match maybe_instruction {
                 Ok(instruction) => instructions.push(instruction),
-                Err(msg) => { errors.insert(current_line, msg); }
+                Err(msg) => {
+                    errors.insert(current_line, msg);
+                }
             };
+        }
 
-            current_line += 1;
-        }   
-        
         if errors.is_empty() {
-            Ok(CompilationResult { instructions, instructions_addresses })
+            Ok(CompilationResult {
+                instructions,
+                instructions_addresses,
+            })
         } else {
             Err(errors)
         }

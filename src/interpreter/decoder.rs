@@ -1,98 +1,64 @@
 mod operand;
 
-use std::collections::HashMap;
+use std::{cmp::Ordering, collections::HashMap};
 
-use eeric::prelude::{*, format::*};
+use eeric::prelude::{format::*, *};
+use operand::{csr, float, integer, vector};
 use Instruction::*;
-use operand::{integer, float, csr, vector};
 
 pub struct Decoder;
 
 pub enum LineClassification {
     Instruction(String),
     Label(String),
-    Empty
+    Empty,
 }
 
 impl Decoder {
     pub fn classify(line: &str) -> LineClassification {
-        let trimmed_line = line
-            .split("#")
-            .next()
-            .unwrap_or("")
-            .trim();
+        let trimmed_line = line.split('#').next().unwrap_or("").trim();
 
         if trimmed_line.is_empty() {
             LineClassification::Empty
-        } else if trimmed_line.ends_with(":") {
-            LineClassification::Label(trimmed_line[..trimmed_line.len() - 1].to_string())
+        } else if let Some(label) = trimmed_line.strip_suffix(':') {
+            LineClassification::Label(label.to_string())
         } else {
             LineClassification::Instruction(trimmed_line.to_string())
         }
     }
 
-    pub fn decode(instruction_line: &str, labels: &HashMap<String, usize>, current_address: usize) -> Result<Instruction, String> {
+    pub fn decode(
+        instruction_line: &str,
+        labels: &HashMap<String, usize>,
+        current_address: usize,
+    ) -> Result<Instruction, String> {
         let (mnemonic, operands) = Self::split_instruction(instruction_line);
 
         use integer::{
-            parse_r_format as r,
-            parse_i_format as i,
-            parse_load_format as l,
-            parse_s_format as s,
-            parse_branch_format as b,
-            parse_u_format as u
+            parse_branch_format as b, parse_i_format as i, parse_load_format as l,
+            parse_r_format as r, parse_s_format as s, parse_u_format as u,
         };
 
-        use csr::{
-            parse_csrr_format as csrr,
-            parse_csri_format as csri
-        };
+        use csr::{parse_csri_format as csri, parse_csrr_format as csrr};
 
         use float::parse_r4_format as r4;
 
-        use vector:: {
-            parse_vsetvli_format as vsetvli,
-            parse_vsetivli_format as vsetivli,
-            parse_vsetvl_format as vsetvl,
-            
-            parse_vl_format as vl,
-            parse_vlm_format as vlm,
-            parse_vs_format as vs,
-            parse_vsm_format as vsm,
-            parse_vls_format as vls,
-            parse_vss_format as vss,
-            parse_vlx_format as vlx,
-            parse_vsx_format as vsx,
-            parse_vlr_format as vlr,
-            parse_vsr_format as vsr,
-
-            parse_opivv_format as opivv,
-            parse_opivx_format as opivx,
-            parse_opivi_format as opivi,
-
-            parse_opmvv_format as opmvv,
-            parse_opmvx_format as opmvx,
-
-            parse_opmvv_fma_format as opmvv_fma,
-            parse_opmvx_fma_format as opmvx_fma,
-            
-            parse_vwxunary0_vmvxs_format as vmvxs,
-            parse_vwxunary0_format as vwxunary0,
-            parse_vrxunary0_format as vrxunary0,
+        use vector::{
+            parse_opfvf_fma_format as opfvf_fma, parse_opfvf_format as opfvf,
+            parse_opfvv_fma_format as opfvv_fma, parse_opfvv_format as opfvv,
+            parse_opivi_format as opivi, parse_opivv_format as opivv, parse_opivx_format as opivx,
+            parse_opmvv_fma_format as opmvv_fma, parse_opmvv_format as opmvv,
+            parse_opmvx_fma_format as opmvx_fma, parse_opmvx_format as opmvx,
+            parse_vfunary0_format as vfunary0, parse_vfunary1_format as vfunary1,
+            parse_vl_format as vl, parse_vlm_format as vlm, parse_vlr_format as vlr,
+            parse_vls_format as vls, parse_vlx_format as vlx, parse_vmunary0_format as vmunary0,
+            parse_vmunary0_vidv_format as vidv, parse_vrfunary0_format as vrfunary0,
+            parse_vrxunary0_format as vrxunary0, parse_vs_format as vs,
+            parse_vsetivli_format as vsetivli, parse_vsetvl_format as vsetvl,
+            parse_vsetvli_format as vsetvli, parse_vsm_format as vsm, parse_vsr_format as vsr,
+            parse_vss_format as vss, parse_vsx_format as vsx, parse_vwfunary0_format as vwfunary0,
+            parse_vwxunary0_format as vwxunary0, parse_vwxunary0_vmvxs_format as vmvxs,
             parse_vxunary0_format as vxunary0,
-            parse_vmunary0_vidv_format as vidv,
-            parse_vmunary0_format as vmunary0,
-
-            parse_opfvv_format as opfvv,
-            parse_opfvf_format as opfvf,
-
-            parse_opfvv_fma_format as opfvv_fma,
-            parse_opfvf_fma_format as opfvf_fma,
-
-            parse_vwfunary0_format as vwfunary0,
-            parse_vrfunary0_format as vrfunary0,
-            parse_vfunary0_format as vfunary0,
-            parse_vfunary1_format as vfunary1
         };
 
         let instruction = match mnemonic {
@@ -140,12 +106,12 @@ impl Decoder {
             "sh" => Sh(s(operands)?),
             "sb" => Sb(s(operands)?),
 
-            "beq" => Beq(b(operands, &labels, current_address)?),
-            "bne" => Bne(b(operands, &labels, current_address)?),
-            "bge" => Bge(b(operands, &labels, current_address)?),
-            "bgeu" => Bgeu(b(operands, &labels, current_address)?),
-            "blt" => Blt(b(operands, &labels, current_address)?),
-            "bltu" => Bltu(b(operands, &labels, current_address)?),
+            "beq" => Beq(b(operands, labels, current_address)?),
+            "bne" => Bne(b(operands, labels, current_address)?),
+            "bge" => Bge(b(operands, labels, current_address)?),
+            "bgeu" => Bgeu(b(operands, labels, current_address)?),
+            "blt" => Blt(b(operands, labels, current_address)?),
+            "bltu" => Bltu(b(operands, labels, current_address)?),
             "jal" => Jal(u(operands)?),
             "jalr" => Jalr(l(operands)?),
 
@@ -238,341 +204,1548 @@ impl Decoder {
             "vsetivli" => Vsetivli(vsetivli(operands)?),
             "vsetvl" => Vsetvl(vsetvl(operands)?),
 
-            "vle8.v" => Vlv { eew: SEW::E8, data: vl(operands)?},
-            "vle16.v" => Vlv { eew: SEW::E16, data: vl(operands)?},
-            "vle32.v" => Vlv { eew: SEW::E32, data: vl(operands)?},
-            "vle64.v" => Vlv { eew: SEW::E64, data: vl(operands)?},
+            "vle8.v" => Vlv {
+                eew: SEW::E8,
+                data: vl(operands)?,
+            },
+            "vle16.v" => Vlv {
+                eew: SEW::E16,
+                data: vl(operands)?,
+            },
+            "vle32.v" => Vlv {
+                eew: SEW::E32,
+                data: vl(operands)?,
+            },
+            "vle64.v" => Vlv {
+                eew: SEW::E64,
+                data: vl(operands)?,
+            },
 
-            "vse8.v" => Vsv { eew: SEW::E8, data: vs(operands)?},
-            "vse16.v" => Vsv { eew: SEW::E16, data: vs(operands)?},
-            "vse32.v" => Vsv { eew: SEW::E32, data: vs(operands)?},
-            "vse64.v" => Vsv { eew: SEW::E64, data: vs(operands)?},
+            "vse8.v" => Vsv {
+                eew: SEW::E8,
+                data: vs(operands)?,
+            },
+            "vse16.v" => Vsv {
+                eew: SEW::E16,
+                data: vs(operands)?,
+            },
+            "vse32.v" => Vsv {
+                eew: SEW::E32,
+                data: vs(operands)?,
+            },
+            "vse64.v" => Vsv {
+                eew: SEW::E64,
+                data: vs(operands)?,
+            },
 
             "vlm.v" => Vlmv(vlm(operands)?),
             "vsm.v" => Vsmv(vsm(operands)?),
 
-            "vlse8.v" => Vlsv { eew: SEW::E8, data: vls(operands)?},
-            "vlse16.v" => Vlsv { eew: SEW::E16, data: vls(operands)?},
-            "vlse32.v" => Vlsv { eew: SEW::E32, data: vls(operands)?},
-            "vlse64.v" => Vlsv { eew: SEW::E64, data: vls(operands)?},
+            "vlse8.v" => Vlsv {
+                eew: SEW::E8,
+                data: vls(operands)?,
+            },
+            "vlse16.v" => Vlsv {
+                eew: SEW::E16,
+                data: vls(operands)?,
+            },
+            "vlse32.v" => Vlsv {
+                eew: SEW::E32,
+                data: vls(operands)?,
+            },
+            "vlse64.v" => Vlsv {
+                eew: SEW::E64,
+                data: vls(operands)?,
+            },
 
-            "vsse8.v" => Vssv { eew: SEW::E8, data: vss(operands)?},
-            "vsse16.v" => Vssv { eew: SEW::E16, data: vss(operands)?},
-            "vsse32.v" => Vssv { eew: SEW::E32, data: vss(operands)?},
-            "vsse64.v" => Vssv { eew: SEW::E64, data: vss(operands)?},
+            "vsse8.v" => Vssv {
+                eew: SEW::E8,
+                data: vss(operands)?,
+            },
+            "vsse16.v" => Vssv {
+                eew: SEW::E16,
+                data: vss(operands)?,
+            },
+            "vsse32.v" => Vssv {
+                eew: SEW::E32,
+                data: vss(operands)?,
+            },
+            "vsse64.v" => Vssv {
+                eew: SEW::E64,
+                data: vss(operands)?,
+            },
 
-            "vluxei8.v" => Vluxv { eew: SEW::E8, data: vlx(operands)?},
-            "vluxei16.v" => Vluxv { eew: SEW::E16, data: vlx(operands)?},
-            "vluxei32.v" => Vluxv { eew: SEW::E32, data: vlx(operands)?},
-            "vluxei64.v" => Vluxv { eew: SEW::E64, data: vlx(operands)?},
+            "vluxei8.v" => Vluxv {
+                eew: SEW::E8,
+                data: vlx(operands)?,
+            },
+            "vluxei16.v" => Vluxv {
+                eew: SEW::E16,
+                data: vlx(operands)?,
+            },
+            "vluxei32.v" => Vluxv {
+                eew: SEW::E32,
+                data: vlx(operands)?,
+            },
+            "vluxei64.v" => Vluxv {
+                eew: SEW::E64,
+                data: vlx(operands)?,
+            },
 
-            "vloxei8.v" => Vloxv { eew: SEW::E8, data: vlx(operands)?},
-            "vloxei16.v" => Vloxv { eew: SEW::E16, data: vlx(operands)?},
-            "vloxei32.v" => Vloxv { eew: SEW::E32, data: vlx(operands)?},
-            "vloxei64.v" => Vloxv { eew: SEW::E64, data: vlx(operands)?},
+            "vloxei8.v" => Vloxv {
+                eew: SEW::E8,
+                data: vlx(operands)?,
+            },
+            "vloxei16.v" => Vloxv {
+                eew: SEW::E16,
+                data: vlx(operands)?,
+            },
+            "vloxei32.v" => Vloxv {
+                eew: SEW::E32,
+                data: vlx(operands)?,
+            },
+            "vloxei64.v" => Vloxv {
+                eew: SEW::E64,
+                data: vlx(operands)?,
+            },
 
-            "vsuxei8.v" => Vsuxv { eew: SEW::E8, data: vsx(operands)?},
-            "vsuxei16.v" => Vsuxv { eew: SEW::E16, data: vsx(operands)?},
-            "vsuxei32.v" => Vsuxv { eew: SEW::E32, data: vsx(operands)?},
-            "vsuxei64.v" => Vsuxv { eew: SEW::E64, data: vsx(operands)?},
+            "vsuxei8.v" => Vsuxv {
+                eew: SEW::E8,
+                data: vsx(operands)?,
+            },
+            "vsuxei16.v" => Vsuxv {
+                eew: SEW::E16,
+                data: vsx(operands)?,
+            },
+            "vsuxei32.v" => Vsuxv {
+                eew: SEW::E32,
+                data: vsx(operands)?,
+            },
+            "vsuxei64.v" => Vsuxv {
+                eew: SEW::E64,
+                data: vsx(operands)?,
+            },
 
-            "vsuxeix8.v" => Vsuxv { eew: SEW::E8, data: vsx(operands)?},
-            "vsuxeix16.v" => Vsuxv { eew: SEW::E16, data: vsx(operands)?},
-            "vsuxeix32.v" => Vsuxv { eew: SEW::E32, data: vsx(operands)?},
-            "vsuxeix64.v" => Vsuxv { eew: SEW::E64, data: vsx(operands)?},
+            "vsuxeix8.v" => Vsuxv {
+                eew: SEW::E8,
+                data: vsx(operands)?,
+            },
+            "vsuxeix16.v" => Vsuxv {
+                eew: SEW::E16,
+                data: vsx(operands)?,
+            },
+            "vsuxeix32.v" => Vsuxv {
+                eew: SEW::E32,
+                data: vsx(operands)?,
+            },
+            "vsuxeix64.v" => Vsuxv {
+                eew: SEW::E64,
+                data: vsx(operands)?,
+            },
 
-            "vle8ff.v" => Vlffv { eew: SEW::E8, data: vl(operands)?},
-            "vle16ff.v" => Vlffv { eew: SEW::E16, data: vl(operands)?},
-            "vle32ff.v" => Vlffv { eew: SEW::E32, data: vl(operands)?},
-            "vle64ff.v" => Vlffv { eew: SEW::E64, data: vl(operands)?},
+            "vle8ff.v" => Vlffv {
+                eew: SEW::E8,
+                data: vl(operands)?,
+            },
+            "vle16ff.v" => Vlffv {
+                eew: SEW::E16,
+                data: vl(operands)?,
+            },
+            "vle32ff.v" => Vlffv {
+                eew: SEW::E32,
+                data: vl(operands)?,
+            },
+            "vle64ff.v" => Vlffv {
+                eew: SEW::E64,
+                data: vl(operands)?,
+            },
 
             // Note: I need to list all combinations so that I can research const-generification segmented load/stores in the future
+            "vlseg1e8.v" => Vlsegv {
+                nf: 1,
+                eew: SEW::E8,
+                data: vl(operands)?,
+            },
+            "vlseg1e16.v" => Vlsegv {
+                nf: 1,
+                eew: SEW::E16,
+                data: vl(operands)?,
+            },
+            "vlseg1e32.v" => Vlsegv {
+                nf: 1,
+                eew: SEW::E32,
+                data: vl(operands)?,
+            },
+            "vlseg1e64.v" => Vlsegv {
+                nf: 1,
+                eew: SEW::E64,
+                data: vl(operands)?,
+            },
+            "vlseg2e8.v" => Vlsegv {
+                nf: 2,
+                eew: SEW::E8,
+                data: vl(operands)?,
+            },
+            "vlseg2e16.v" => Vlsegv {
+                nf: 2,
+                eew: SEW::E16,
+                data: vl(operands)?,
+            },
+            "vlseg2e32.v" => Vlsegv {
+                nf: 2,
+                eew: SEW::E32,
+                data: vl(operands)?,
+            },
+            "vlseg2e64.v" => Vlsegv {
+                nf: 2,
+                eew: SEW::E64,
+                data: vl(operands)?,
+            },
+            "vlseg3e8.v" => Vlsegv {
+                nf: 3,
+                eew: SEW::E8,
+                data: vl(operands)?,
+            },
+            "vlseg3e16.v" => Vlsegv {
+                nf: 3,
+                eew: SEW::E16,
+                data: vl(operands)?,
+            },
+            "vlseg3e32.v" => Vlsegv {
+                nf: 3,
+                eew: SEW::E32,
+                data: vl(operands)?,
+            },
+            "vlseg3e64.v" => Vlsegv {
+                nf: 3,
+                eew: SEW::E64,
+                data: vl(operands)?,
+            },
+            "vlseg4e8.v" => Vlsegv {
+                nf: 4,
+                eew: SEW::E8,
+                data: vl(operands)?,
+            },
+            "vlseg4e16.v" => Vlsegv {
+                nf: 4,
+                eew: SEW::E16,
+                data: vl(operands)?,
+            },
+            "vlseg4e32.v" => Vlsegv {
+                nf: 4,
+                eew: SEW::E32,
+                data: vl(operands)?,
+            },
+            "vlseg4e64.v" => Vlsegv {
+                nf: 4,
+                eew: SEW::E64,
+                data: vl(operands)?,
+            },
+            "vlseg5e8.v" => Vlsegv {
+                nf: 5,
+                eew: SEW::E8,
+                data: vl(operands)?,
+            },
+            "vlseg5e16.v" => Vlsegv {
+                nf: 5,
+                eew: SEW::E16,
+                data: vl(operands)?,
+            },
+            "vlseg5e32.v" => Vlsegv {
+                nf: 5,
+                eew: SEW::E32,
+                data: vl(operands)?,
+            },
+            "vlseg5e64.v" => Vlsegv {
+                nf: 5,
+                eew: SEW::E64,
+                data: vl(operands)?,
+            },
+            "vlseg6e8.v" => Vlsegv {
+                nf: 6,
+                eew: SEW::E8,
+                data: vl(operands)?,
+            },
+            "vlseg6e16.v" => Vlsegv {
+                nf: 6,
+                eew: SEW::E16,
+                data: vl(operands)?,
+            },
+            "vlseg6e32.v" => Vlsegv {
+                nf: 6,
+                eew: SEW::E32,
+                data: vl(operands)?,
+            },
+            "vlseg6e64.v" => Vlsegv {
+                nf: 6,
+                eew: SEW::E64,
+                data: vl(operands)?,
+            },
+            "vlseg7e8.v" => Vlsegv {
+                nf: 7,
+                eew: SEW::E8,
+                data: vl(operands)?,
+            },
+            "vlseg7e16.v" => Vlsegv {
+                nf: 7,
+                eew: SEW::E16,
+                data: vl(operands)?,
+            },
+            "vlseg7e32.v" => Vlsegv {
+                nf: 7,
+                eew: SEW::E32,
+                data: vl(operands)?,
+            },
+            "vlseg7e64.v" => Vlsegv {
+                nf: 7,
+                eew: SEW::E64,
+                data: vl(operands)?,
+            },
+            "vlseg8e8.v" => Vlsegv {
+                nf: 8,
+                eew: SEW::E8,
+                data: vl(operands)?,
+            },
+            "vlseg8e16.v" => Vlsegv {
+                nf: 8,
+                eew: SEW::E16,
+                data: vl(operands)?,
+            },
+            "vlseg8e32.v" => Vlsegv {
+                nf: 8,
+                eew: SEW::E32,
+                data: vl(operands)?,
+            },
+            "vlseg8e64.v" => Vlsegv {
+                nf: 8,
+                eew: SEW::E64,
+                data: vl(operands)?,
+            },
 
-            "vlseg1e8.v"  => Vlsegv { nf: 1, eew: SEW::E8,  data: vl(operands)?},
-            "vlseg1e16.v" => Vlsegv { nf: 1, eew: SEW::E16, data: vl(operands)?},
-            "vlseg1e32.v" => Vlsegv { nf: 1, eew: SEW::E32, data: vl(operands)?},
-            "vlseg1e64.v" => Vlsegv { nf: 1, eew: SEW::E64, data: vl(operands)?},
-            "vlseg2e8.v"  => Vlsegv { nf: 2, eew: SEW::E8,  data: vl(operands)?},
-            "vlseg2e16.v" => Vlsegv { nf: 2, eew: SEW::E16, data: vl(operands)?},
-            "vlseg2e32.v" => Vlsegv { nf: 2, eew: SEW::E32, data: vl(operands)?},
-            "vlseg2e64.v" => Vlsegv { nf: 2, eew: SEW::E64, data: vl(operands)?},
-            "vlseg3e8.v"  => Vlsegv { nf: 3, eew: SEW::E8,  data: vl(operands)?},
-            "vlseg3e16.v" => Vlsegv { nf: 3, eew: SEW::E16, data: vl(operands)?},
-            "vlseg3e32.v" => Vlsegv { nf: 3, eew: SEW::E32, data: vl(operands)?},
-            "vlseg3e64.v" => Vlsegv { nf: 3, eew: SEW::E64, data: vl(operands)?},
-            "vlseg4e8.v"  => Vlsegv { nf: 4, eew: SEW::E8,  data: vl(operands)?},
-            "vlseg4e16.v" => Vlsegv { nf: 4, eew: SEW::E16, data: vl(operands)?},
-            "vlseg4e32.v" => Vlsegv { nf: 4, eew: SEW::E32, data: vl(operands)?},
-            "vlseg4e64.v" => Vlsegv { nf: 4, eew: SEW::E64, data: vl(operands)?},
-            "vlseg5e8.v"  => Vlsegv { nf: 5, eew: SEW::E8,  data: vl(operands)?},
-            "vlseg5e16.v" => Vlsegv { nf: 5, eew: SEW::E16, data: vl(operands)?},
-            "vlseg5e32.v" => Vlsegv { nf: 5, eew: SEW::E32, data: vl(operands)?},
-            "vlseg5e64.v" => Vlsegv { nf: 5, eew: SEW::E64, data: vl(operands)?},
-            "vlseg6e8.v"  => Vlsegv { nf: 6, eew: SEW::E8,  data: vl(operands)?},
-            "vlseg6e16.v" => Vlsegv { nf: 6, eew: SEW::E16, data: vl(operands)?},
-            "vlseg6e32.v" => Vlsegv { nf: 6, eew: SEW::E32, data: vl(operands)?},
-            "vlseg6e64.v" => Vlsegv { nf: 6, eew: SEW::E64, data: vl(operands)?},
-            "vlseg7e8.v"  => Vlsegv { nf: 7, eew: SEW::E8,  data: vl(operands)?},
-            "vlseg7e16.v" => Vlsegv { nf: 7, eew: SEW::E16, data: vl(operands)?},
-            "vlseg7e32.v" => Vlsegv { nf: 7, eew: SEW::E32, data: vl(operands)?},
-            "vlseg7e64.v" => Vlsegv { nf: 7, eew: SEW::E64, data: vl(operands)?},
-            "vlseg8e8.v"  => Vlsegv { nf: 8, eew: SEW::E8,  data: vl(operands)?},
-            "vlseg8e16.v" => Vlsegv { nf: 8, eew: SEW::E16, data: vl(operands)?},
-            "vlseg8e32.v" => Vlsegv { nf: 8, eew: SEW::E32, data: vl(operands)?},
-            "vlseg8e64.v" => Vlsegv { nf: 8, eew: SEW::E64, data: vl(operands)?},
+            "vsseg1e8.v" => Vssegv {
+                nf: 1,
+                eew: SEW::E8,
+                data: vs(operands)?,
+            },
+            "vsseg1e16.v" => Vssegv {
+                nf: 1,
+                eew: SEW::E16,
+                data: vs(operands)?,
+            },
+            "vsseg1e32.v" => Vssegv {
+                nf: 1,
+                eew: SEW::E32,
+                data: vs(operands)?,
+            },
+            "vsseg1e64.v" => Vssegv {
+                nf: 1,
+                eew: SEW::E64,
+                data: vs(operands)?,
+            },
+            "vsseg2e8.v" => Vssegv {
+                nf: 2,
+                eew: SEW::E8,
+                data: vs(operands)?,
+            },
+            "vsseg2e16.v" => Vssegv {
+                nf: 2,
+                eew: SEW::E16,
+                data: vs(operands)?,
+            },
+            "vsseg2e32.v" => Vssegv {
+                nf: 2,
+                eew: SEW::E32,
+                data: vs(operands)?,
+            },
+            "vsseg2e64.v" => Vssegv {
+                nf: 2,
+                eew: SEW::E64,
+                data: vs(operands)?,
+            },
+            "vsseg3e8.v" => Vssegv {
+                nf: 3,
+                eew: SEW::E8,
+                data: vs(operands)?,
+            },
+            "vsseg3e16.v" => Vssegv {
+                nf: 3,
+                eew: SEW::E16,
+                data: vs(operands)?,
+            },
+            "vsseg3e32.v" => Vssegv {
+                nf: 3,
+                eew: SEW::E32,
+                data: vs(operands)?,
+            },
+            "vsseg3e64.v" => Vssegv {
+                nf: 3,
+                eew: SEW::E64,
+                data: vs(operands)?,
+            },
+            "vsseg4e8.v" => Vssegv {
+                nf: 4,
+                eew: SEW::E8,
+                data: vs(operands)?,
+            },
+            "vsseg4e16.v" => Vssegv {
+                nf: 4,
+                eew: SEW::E16,
+                data: vs(operands)?,
+            },
+            "vsseg4e32.v" => Vssegv {
+                nf: 4,
+                eew: SEW::E32,
+                data: vs(operands)?,
+            },
+            "vsseg4e64.v" => Vssegv {
+                nf: 4,
+                eew: SEW::E64,
+                data: vs(operands)?,
+            },
+            "vsseg5e8.v" => Vssegv {
+                nf: 5,
+                eew: SEW::E8,
+                data: vs(operands)?,
+            },
+            "vsseg5e16.v" => Vssegv {
+                nf: 5,
+                eew: SEW::E16,
+                data: vs(operands)?,
+            },
+            "vsseg5e32.v" => Vssegv {
+                nf: 5,
+                eew: SEW::E32,
+                data: vs(operands)?,
+            },
+            "vsseg5e64.v" => Vssegv {
+                nf: 5,
+                eew: SEW::E64,
+                data: vs(operands)?,
+            },
+            "vsseg6e8.v" => Vssegv {
+                nf: 6,
+                eew: SEW::E8,
+                data: vs(operands)?,
+            },
+            "vsseg6e16.v" => Vssegv {
+                nf: 6,
+                eew: SEW::E16,
+                data: vs(operands)?,
+            },
+            "vsseg6e32.v" => Vssegv {
+                nf: 6,
+                eew: SEW::E32,
+                data: vs(operands)?,
+            },
+            "vsseg6e64.v" => Vssegv {
+                nf: 6,
+                eew: SEW::E64,
+                data: vs(operands)?,
+            },
+            "vsseg7e8.v" => Vssegv {
+                nf: 7,
+                eew: SEW::E8,
+                data: vs(operands)?,
+            },
+            "vsseg7e16.v" => Vssegv {
+                nf: 7,
+                eew: SEW::E16,
+                data: vs(operands)?,
+            },
+            "vsseg7e32.v" => Vssegv {
+                nf: 7,
+                eew: SEW::E32,
+                data: vs(operands)?,
+            },
+            "vsseg7e64.v" => Vssegv {
+                nf: 7,
+                eew: SEW::E64,
+                data: vs(operands)?,
+            },
+            "vsseg8e8.v" => Vssegv {
+                nf: 8,
+                eew: SEW::E8,
+                data: vs(operands)?,
+            },
+            "vsseg8e16.v" => Vssegv {
+                nf: 8,
+                eew: SEW::E16,
+                data: vs(operands)?,
+            },
+            "vsseg8e32.v" => Vssegv {
+                nf: 8,
+                eew: SEW::E32,
+                data: vs(operands)?,
+            },
+            "vsseg8e64.v" => Vssegv {
+                nf: 8,
+                eew: SEW::E64,
+                data: vs(operands)?,
+            },
 
-            "vsseg1e8.v"  => Vssegv { nf: 1, eew: SEW::E8,  data: vs(operands)?},
-            "vsseg1e16.v" => Vssegv { nf: 1, eew: SEW::E16, data: vs(operands)?},
-            "vsseg1e32.v" => Vssegv { nf: 1, eew: SEW::E32, data: vs(operands)?},
-            "vsseg1e64.v" => Vssegv { nf: 1, eew: SEW::E64, data: vs(operands)?},
-            "vsseg2e8.v"  => Vssegv { nf: 2, eew: SEW::E8,  data: vs(operands)?},
-            "vsseg2e16.v" => Vssegv { nf: 2, eew: SEW::E16, data: vs(operands)?},
-            "vsseg2e32.v" => Vssegv { nf: 2, eew: SEW::E32, data: vs(operands)?},
-            "vsseg2e64.v" => Vssegv { nf: 2, eew: SEW::E64, data: vs(operands)?},
-            "vsseg3e8.v"  => Vssegv { nf: 3, eew: SEW::E8,  data: vs(operands)?},
-            "vsseg3e16.v" => Vssegv { nf: 3, eew: SEW::E16, data: vs(operands)?},
-            "vsseg3e32.v" => Vssegv { nf: 3, eew: SEW::E32, data: vs(operands)?},
-            "vsseg3e64.v" => Vssegv { nf: 3, eew: SEW::E64, data: vs(operands)?},
-            "vsseg4e8.v"  => Vssegv { nf: 4, eew: SEW::E8,  data: vs(operands)?},
-            "vsseg4e16.v" => Vssegv { nf: 4, eew: SEW::E16, data: vs(operands)?},
-            "vsseg4e32.v" => Vssegv { nf: 4, eew: SEW::E32, data: vs(operands)?},
-            "vsseg4e64.v" => Vssegv { nf: 4, eew: SEW::E64, data: vs(operands)?},
-            "vsseg5e8.v"  => Vssegv { nf: 5, eew: SEW::E8,  data: vs(operands)?},
-            "vsseg5e16.v" => Vssegv { nf: 5, eew: SEW::E16, data: vs(operands)?},
-            "vsseg5e32.v" => Vssegv { nf: 5, eew: SEW::E32, data: vs(operands)?},
-            "vsseg5e64.v" => Vssegv { nf: 5, eew: SEW::E64, data: vs(operands)?},
-            "vsseg6e8.v"  => Vssegv { nf: 6, eew: SEW::E8,  data: vs(operands)?},
-            "vsseg6e16.v" => Vssegv { nf: 6, eew: SEW::E16, data: vs(operands)?},
-            "vsseg6e32.v" => Vssegv { nf: 6, eew: SEW::E32, data: vs(operands)?},
-            "vsseg6e64.v" => Vssegv { nf: 6, eew: SEW::E64, data: vs(operands)?},
-            "vsseg7e8.v"  => Vssegv { nf: 7, eew: SEW::E8,  data: vs(operands)?},
-            "vsseg7e16.v" => Vssegv { nf: 7, eew: SEW::E16, data: vs(operands)?},
-            "vsseg7e32.v" => Vssegv { nf: 7, eew: SEW::E32, data: vs(operands)?},
-            "vsseg7e64.v" => Vssegv { nf: 7, eew: SEW::E64, data: vs(operands)?},
-            "vsseg8e8.v"  => Vssegv { nf: 8, eew: SEW::E8,  data: vs(operands)?},
-            "vsseg8e16.v" => Vssegv { nf: 8, eew: SEW::E16, data: vs(operands)?},
-            "vsseg8e32.v" => Vssegv { nf: 8, eew: SEW::E32, data: vs(operands)?},
-            "vsseg8e64.v" => Vssegv { nf: 8, eew: SEW::E64, data: vs(operands)?},
+            "vlsseg1e8.v" => Vlssegv {
+                nf: 1,
+                eew: SEW::E8,
+                data: vls(operands)?,
+            },
+            "vlsseg1e16.v" => Vlssegv {
+                nf: 1,
+                eew: SEW::E16,
+                data: vls(operands)?,
+            },
+            "vlsseg1e32.v" => Vlssegv {
+                nf: 1,
+                eew: SEW::E32,
+                data: vls(operands)?,
+            },
+            "vlsseg1e64.v" => Vlssegv {
+                nf: 1,
+                eew: SEW::E64,
+                data: vls(operands)?,
+            },
+            "vlsseg2e8.v" => Vlssegv {
+                nf: 2,
+                eew: SEW::E8,
+                data: vls(operands)?,
+            },
+            "vlsseg2e16.v" => Vlssegv {
+                nf: 2,
+                eew: SEW::E16,
+                data: vls(operands)?,
+            },
+            "vlsseg2e32.v" => Vlssegv {
+                nf: 2,
+                eew: SEW::E32,
+                data: vls(operands)?,
+            },
+            "vlsseg2e64.v" => Vlssegv {
+                nf: 2,
+                eew: SEW::E64,
+                data: vls(operands)?,
+            },
+            "vlsseg3e8.v" => Vlssegv {
+                nf: 3,
+                eew: SEW::E8,
+                data: vls(operands)?,
+            },
+            "vlsseg3e16.v" => Vlssegv {
+                nf: 3,
+                eew: SEW::E16,
+                data: vls(operands)?,
+            },
+            "vlsseg3e32.v" => Vlssegv {
+                nf: 3,
+                eew: SEW::E32,
+                data: vls(operands)?,
+            },
+            "vlsseg3e64.v" => Vlssegv {
+                nf: 3,
+                eew: SEW::E64,
+                data: vls(operands)?,
+            },
+            "vlsseg4e8.v" => Vlssegv {
+                nf: 4,
+                eew: SEW::E8,
+                data: vls(operands)?,
+            },
+            "vlsseg4e16.v" => Vlssegv {
+                nf: 4,
+                eew: SEW::E16,
+                data: vls(operands)?,
+            },
+            "vlsseg4e32.v" => Vlssegv {
+                nf: 4,
+                eew: SEW::E32,
+                data: vls(operands)?,
+            },
+            "vlsseg4e64.v" => Vlssegv {
+                nf: 4,
+                eew: SEW::E64,
+                data: vls(operands)?,
+            },
+            "vlsseg5e8.v" => Vlssegv {
+                nf: 5,
+                eew: SEW::E8,
+                data: vls(operands)?,
+            },
+            "vlsseg5e16.v" => Vlssegv {
+                nf: 5,
+                eew: SEW::E16,
+                data: vls(operands)?,
+            },
+            "vlsseg5e32.v" => Vlssegv {
+                nf: 5,
+                eew: SEW::E32,
+                data: vls(operands)?,
+            },
+            "vlsseg5e64.v" => Vlssegv {
+                nf: 5,
+                eew: SEW::E64,
+                data: vls(operands)?,
+            },
+            "vlsseg6e8.v" => Vlssegv {
+                nf: 6,
+                eew: SEW::E8,
+                data: vls(operands)?,
+            },
+            "vlsseg6e16.v" => Vlssegv {
+                nf: 6,
+                eew: SEW::E16,
+                data: vls(operands)?,
+            },
+            "vlsseg6e32.v" => Vlssegv {
+                nf: 6,
+                eew: SEW::E32,
+                data: vls(operands)?,
+            },
+            "vlsseg6e64.v" => Vlssegv {
+                nf: 6,
+                eew: SEW::E64,
+                data: vls(operands)?,
+            },
+            "vlsseg7e8.v" => Vlssegv {
+                nf: 7,
+                eew: SEW::E8,
+                data: vls(operands)?,
+            },
+            "vlsseg7e16.v" => Vlssegv {
+                nf: 7,
+                eew: SEW::E16,
+                data: vls(operands)?,
+            },
+            "vlsseg7e32.v" => Vlssegv {
+                nf: 7,
+                eew: SEW::E32,
+                data: vls(operands)?,
+            },
+            "vlsseg7e64.v" => Vlssegv {
+                nf: 7,
+                eew: SEW::E64,
+                data: vls(operands)?,
+            },
+            "vlsseg8e8.v" => Vlssegv {
+                nf: 8,
+                eew: SEW::E8,
+                data: vls(operands)?,
+            },
+            "vlsseg8e16.v" => Vlssegv {
+                nf: 8,
+                eew: SEW::E16,
+                data: vls(operands)?,
+            },
+            "vlsseg8e32.v" => Vlssegv {
+                nf: 8,
+                eew: SEW::E32,
+                data: vls(operands)?,
+            },
+            "vlsseg8e64.v" => Vlssegv {
+                nf: 8,
+                eew: SEW::E64,
+                data: vls(operands)?,
+            },
 
-            "vlsseg1e8.v"  => Vlssegv { nf: 1, eew: SEW::E8,  data: vls(operands)?},
-            "vlsseg1e16.v" => Vlssegv { nf: 1, eew: SEW::E16, data: vls(operands)?},
-            "vlsseg1e32.v" => Vlssegv { nf: 1, eew: SEW::E32, data: vls(operands)?},
-            "vlsseg1e64.v" => Vlssegv { nf: 1, eew: SEW::E64, data: vls(operands)?},
-            "vlsseg2e8.v"  => Vlssegv { nf: 2, eew: SEW::E8,  data: vls(operands)?},
-            "vlsseg2e16.v" => Vlssegv { nf: 2, eew: SEW::E16, data: vls(operands)?},
-            "vlsseg2e32.v" => Vlssegv { nf: 2, eew: SEW::E32, data: vls(operands)?},
-            "vlsseg2e64.v" => Vlssegv { nf: 2, eew: SEW::E64, data: vls(operands)?},
-            "vlsseg3e8.v"  => Vlssegv { nf: 3, eew: SEW::E8,  data: vls(operands)?},
-            "vlsseg3e16.v" => Vlssegv { nf: 3, eew: SEW::E16, data: vls(operands)?},
-            "vlsseg3e32.v" => Vlssegv { nf: 3, eew: SEW::E32, data: vls(operands)?},
-            "vlsseg3e64.v" => Vlssegv { nf: 3, eew: SEW::E64, data: vls(operands)?},
-            "vlsseg4e8.v"  => Vlssegv { nf: 4, eew: SEW::E8,  data: vls(operands)?},
-            "vlsseg4e16.v" => Vlssegv { nf: 4, eew: SEW::E16, data: vls(operands)?},
-            "vlsseg4e32.v" => Vlssegv { nf: 4, eew: SEW::E32, data: vls(operands)?},
-            "vlsseg4e64.v" => Vlssegv { nf: 4, eew: SEW::E64, data: vls(operands)?},
-            "vlsseg5e8.v"  => Vlssegv { nf: 5, eew: SEW::E8,  data: vls(operands)?},
-            "vlsseg5e16.v" => Vlssegv { nf: 5, eew: SEW::E16, data: vls(operands)?},
-            "vlsseg5e32.v" => Vlssegv { nf: 5, eew: SEW::E32, data: vls(operands)?},
-            "vlsseg5e64.v" => Vlssegv { nf: 5, eew: SEW::E64, data: vls(operands)?},
-            "vlsseg6e8.v"  => Vlssegv { nf: 6, eew: SEW::E8,  data: vls(operands)?},
-            "vlsseg6e16.v" => Vlssegv { nf: 6, eew: SEW::E16, data: vls(operands)?},
-            "vlsseg6e32.v" => Vlssegv { nf: 6, eew: SEW::E32, data: vls(operands)?},
-            "vlsseg6e64.v" => Vlssegv { nf: 6, eew: SEW::E64, data: vls(operands)?},
-            "vlsseg7e8.v"  => Vlssegv { nf: 7, eew: SEW::E8,  data: vls(operands)?},
-            "vlsseg7e16.v" => Vlssegv { nf: 7, eew: SEW::E16, data: vls(operands)?},
-            "vlsseg7e32.v" => Vlssegv { nf: 7, eew: SEW::E32, data: vls(operands)?},
-            "vlsseg7e64.v" => Vlssegv { nf: 7, eew: SEW::E64, data: vls(operands)?},
-            "vlsseg8e8.v"  => Vlssegv { nf: 8, eew: SEW::E8,  data: vls(operands)?},
-            "vlsseg8e16.v" => Vlssegv { nf: 8, eew: SEW::E16, data: vls(operands)?},
-            "vlsseg8e32.v" => Vlssegv { nf: 8, eew: SEW::E32, data: vls(operands)?},
-            "vlsseg8e64.v" => Vlssegv { nf: 8, eew: SEW::E64, data: vls(operands)?},
-            
-            "vssseg1e8.v"  => Vsssegv { nf: 1, eew: SEW::E8,  data: vss(operands)?},
-            "vssseg1e16.v" => Vsssegv { nf: 1, eew: SEW::E16, data: vss(operands)?},
-            "vssseg1e32.v" => Vsssegv { nf: 1, eew: SEW::E32, data: vss(operands)?},
-            "vssseg1e64.v" => Vsssegv { nf: 1, eew: SEW::E64, data: vss(operands)?},
-            "vssseg2e8.v"  => Vsssegv { nf: 2, eew: SEW::E8,  data: vss(operands)?},
-            "vssseg2e16.v" => Vsssegv { nf: 2, eew: SEW::E16, data: vss(operands)?},
-            "vssseg2e32.v" => Vsssegv { nf: 2, eew: SEW::E32, data: vss(operands)?},
-            "vssseg2e64.v" => Vsssegv { nf: 2, eew: SEW::E64, data: vss(operands)?},
-            "vssseg3e8.v"  => Vsssegv { nf: 3, eew: SEW::E8,  data: vss(operands)?},
-            "vssseg3e16.v" => Vsssegv { nf: 3, eew: SEW::E16, data: vss(operands)?},
-            "vssseg3e32.v" => Vsssegv { nf: 3, eew: SEW::E32, data: vss(operands)?},
-            "vssseg3e64.v" => Vsssegv { nf: 3, eew: SEW::E64, data: vss(operands)?},
-            "vssseg4e8.v"  => Vsssegv { nf: 4, eew: SEW::E8,  data: vss(operands)?},
-            "vssseg4e16.v" => Vsssegv { nf: 4, eew: SEW::E16, data: vss(operands)?},
-            "vssseg4e32.v" => Vsssegv { nf: 4, eew: SEW::E32, data: vss(operands)?},
-            "vssseg4e64.v" => Vsssegv { nf: 4, eew: SEW::E64, data: vss(operands)?},
-            "vssseg5e8.v"  => Vsssegv { nf: 5, eew: SEW::E8,  data: vss(operands)?},
-            "vssseg5e16.v" => Vsssegv { nf: 5, eew: SEW::E16, data: vss(operands)?},
-            "vssseg5e32.v" => Vsssegv { nf: 5, eew: SEW::E32, data: vss(operands)?},
-            "vssseg5e64.v" => Vsssegv { nf: 5, eew: SEW::E64, data: vss(operands)?},
-            "vssseg6e8.v"  => Vsssegv { nf: 6, eew: SEW::E8,  data: vss(operands)?},
-            "vssseg6e16.v" => Vsssegv { nf: 6, eew: SEW::E16, data: vss(operands)?},
-            "vssseg6e32.v" => Vsssegv { nf: 6, eew: SEW::E32, data: vss(operands)?},
-            "vssseg6e64.v" => Vsssegv { nf: 6, eew: SEW::E64, data: vss(operands)?},
-            "vssseg7e8.v"  => Vsssegv { nf: 7, eew: SEW::E8,  data: vss(operands)?},
-            "vssseg7e16.v" => Vsssegv { nf: 7, eew: SEW::E16, data: vss(operands)?},
-            "vssseg7e32.v" => Vsssegv { nf: 7, eew: SEW::E32, data: vss(operands)?},
-            "vssseg7e64.v" => Vsssegv { nf: 7, eew: SEW::E64, data: vss(operands)?},
-            "vssseg8e8.v"  => Vsssegv { nf: 8, eew: SEW::E8,  data: vss(operands)?},
-            "vssseg8e16.v" => Vsssegv { nf: 8, eew: SEW::E16, data: vss(operands)?},
-            "vssseg8e32.v" => Vsssegv { nf: 8, eew: SEW::E32, data: vss(operands)?},
-            "vssseg8e64.v" => Vsssegv { nf: 8, eew: SEW::E64, data: vss(operands)?},
+            "vssseg1e8.v" => Vsssegv {
+                nf: 1,
+                eew: SEW::E8,
+                data: vss(operands)?,
+            },
+            "vssseg1e16.v" => Vsssegv {
+                nf: 1,
+                eew: SEW::E16,
+                data: vss(operands)?,
+            },
+            "vssseg1e32.v" => Vsssegv {
+                nf: 1,
+                eew: SEW::E32,
+                data: vss(operands)?,
+            },
+            "vssseg1e64.v" => Vsssegv {
+                nf: 1,
+                eew: SEW::E64,
+                data: vss(operands)?,
+            },
+            "vssseg2e8.v" => Vsssegv {
+                nf: 2,
+                eew: SEW::E8,
+                data: vss(operands)?,
+            },
+            "vssseg2e16.v" => Vsssegv {
+                nf: 2,
+                eew: SEW::E16,
+                data: vss(operands)?,
+            },
+            "vssseg2e32.v" => Vsssegv {
+                nf: 2,
+                eew: SEW::E32,
+                data: vss(operands)?,
+            },
+            "vssseg2e64.v" => Vsssegv {
+                nf: 2,
+                eew: SEW::E64,
+                data: vss(operands)?,
+            },
+            "vssseg3e8.v" => Vsssegv {
+                nf: 3,
+                eew: SEW::E8,
+                data: vss(operands)?,
+            },
+            "vssseg3e16.v" => Vsssegv {
+                nf: 3,
+                eew: SEW::E16,
+                data: vss(operands)?,
+            },
+            "vssseg3e32.v" => Vsssegv {
+                nf: 3,
+                eew: SEW::E32,
+                data: vss(operands)?,
+            },
+            "vssseg3e64.v" => Vsssegv {
+                nf: 3,
+                eew: SEW::E64,
+                data: vss(operands)?,
+            },
+            "vssseg4e8.v" => Vsssegv {
+                nf: 4,
+                eew: SEW::E8,
+                data: vss(operands)?,
+            },
+            "vssseg4e16.v" => Vsssegv {
+                nf: 4,
+                eew: SEW::E16,
+                data: vss(operands)?,
+            },
+            "vssseg4e32.v" => Vsssegv {
+                nf: 4,
+                eew: SEW::E32,
+                data: vss(operands)?,
+            },
+            "vssseg4e64.v" => Vsssegv {
+                nf: 4,
+                eew: SEW::E64,
+                data: vss(operands)?,
+            },
+            "vssseg5e8.v" => Vsssegv {
+                nf: 5,
+                eew: SEW::E8,
+                data: vss(operands)?,
+            },
+            "vssseg5e16.v" => Vsssegv {
+                nf: 5,
+                eew: SEW::E16,
+                data: vss(operands)?,
+            },
+            "vssseg5e32.v" => Vsssegv {
+                nf: 5,
+                eew: SEW::E32,
+                data: vss(operands)?,
+            },
+            "vssseg5e64.v" => Vsssegv {
+                nf: 5,
+                eew: SEW::E64,
+                data: vss(operands)?,
+            },
+            "vssseg6e8.v" => Vsssegv {
+                nf: 6,
+                eew: SEW::E8,
+                data: vss(operands)?,
+            },
+            "vssseg6e16.v" => Vsssegv {
+                nf: 6,
+                eew: SEW::E16,
+                data: vss(operands)?,
+            },
+            "vssseg6e32.v" => Vsssegv {
+                nf: 6,
+                eew: SEW::E32,
+                data: vss(operands)?,
+            },
+            "vssseg6e64.v" => Vsssegv {
+                nf: 6,
+                eew: SEW::E64,
+                data: vss(operands)?,
+            },
+            "vssseg7e8.v" => Vsssegv {
+                nf: 7,
+                eew: SEW::E8,
+                data: vss(operands)?,
+            },
+            "vssseg7e16.v" => Vsssegv {
+                nf: 7,
+                eew: SEW::E16,
+                data: vss(operands)?,
+            },
+            "vssseg7e32.v" => Vsssegv {
+                nf: 7,
+                eew: SEW::E32,
+                data: vss(operands)?,
+            },
+            "vssseg7e64.v" => Vsssegv {
+                nf: 7,
+                eew: SEW::E64,
+                data: vss(operands)?,
+            },
+            "vssseg8e8.v" => Vsssegv {
+                nf: 8,
+                eew: SEW::E8,
+                data: vss(operands)?,
+            },
+            "vssseg8e16.v" => Vsssegv {
+                nf: 8,
+                eew: SEW::E16,
+                data: vss(operands)?,
+            },
+            "vssseg8e32.v" => Vsssegv {
+                nf: 8,
+                eew: SEW::E32,
+                data: vss(operands)?,
+            },
+            "vssseg8e64.v" => Vsssegv {
+                nf: 8,
+                eew: SEW::E64,
+                data: vss(operands)?,
+            },
 
-            "vluxseg1ei8.v"  => Vluxsegv { nf: 1, eew: SEW::E8,  data: vlx(operands)?},
-            "vluxseg1ei16.v" => Vluxsegv { nf: 1, eew: SEW::E16, data: vlx(operands)?},
-            "vluxseg1ei32.v" => Vluxsegv { nf: 1, eew: SEW::E32, data: vlx(operands)?},
-            "vluxseg1ei64.v" => Vluxsegv { nf: 1, eew: SEW::E64, data: vlx(operands)?},
-            "vluxseg2ei8.v"  => Vluxsegv { nf: 2, eew: SEW::E8,  data: vlx(operands)?},
-            "vluxseg2ei16.v" => Vluxsegv { nf: 2, eew: SEW::E16, data: vlx(operands)?},
-            "vluxseg2ei32.v" => Vluxsegv { nf: 2, eew: SEW::E32, data: vlx(operands)?},
-            "vluxseg2ei64.v" => Vluxsegv { nf: 2, eew: SEW::E64, data: vlx(operands)?},
-            "vluxseg3ei8.v"  => Vluxsegv { nf: 3, eew: SEW::E8,  data: vlx(operands)?},
-            "vluxseg3ei16.v" => Vluxsegv { nf: 3, eew: SEW::E16, data: vlx(operands)?},
-            "vluxseg3ei32.v" => Vluxsegv { nf: 3, eew: SEW::E32, data: vlx(operands)?},
-            "vluxseg3ei64.v" => Vluxsegv { nf: 3, eew: SEW::E64, data: vlx(operands)?},
-            "vluxseg4ei8.v"  => Vluxsegv { nf: 4, eew: SEW::E8,  data: vlx(operands)?},
-            "vluxseg4ei16.v" => Vluxsegv { nf: 4, eew: SEW::E16, data: vlx(operands)?},
-            "vluxseg4ei32.v" => Vluxsegv { nf: 4, eew: SEW::E32, data: vlx(operands)?},
-            "vluxseg4ei64.v" => Vluxsegv { nf: 4, eew: SEW::E64, data: vlx(operands)?},
-            "vluxseg5ei8.v"  => Vluxsegv { nf: 5, eew: SEW::E8,  data: vlx(operands)?},
-            "vluxseg5ei16.v" => Vluxsegv { nf: 5, eew: SEW::E16, data: vlx(operands)?},
-            "vluxseg5ei32.v" => Vluxsegv { nf: 5, eew: SEW::E32, data: vlx(operands)?},
-            "vluxseg5ei64.v" => Vluxsegv { nf: 5, eew: SEW::E64, data: vlx(operands)?},
-            "vluxseg6ei8.v"  => Vluxsegv { nf: 6, eew: SEW::E8,  data: vlx(operands)?},
-            "vluxseg6ei16.v" => Vluxsegv { nf: 6, eew: SEW::E16, data: vlx(operands)?},
-            "vluxseg6ei32.v" => Vluxsegv { nf: 6, eew: SEW::E32, data: vlx(operands)?},
-            "vluxseg6ei64.v" => Vluxsegv { nf: 6, eew: SEW::E64, data: vlx(operands)?},
-            "vluxseg7ei8.v"  => Vluxsegv { nf: 7, eew: SEW::E8,  data: vlx(operands)?},
-            "vluxseg7ei16.v" => Vluxsegv { nf: 7, eew: SEW::E16, data: vlx(operands)?},
-            "vluxseg7ei32.v" => Vluxsegv { nf: 7, eew: SEW::E32, data: vlx(operands)?},
-            "vluxseg7ei64.v" => Vluxsegv { nf: 7, eew: SEW::E64, data: vlx(operands)?},
-            "vluxseg8ei8.v"  => Vluxsegv { nf: 8, eew: SEW::E8,  data: vlx(operands)?},
-            "vluxseg8ei16.v" => Vluxsegv { nf: 8, eew: SEW::E16, data: vlx(operands)?},
-            "vluxseg8ei32.v" => Vluxsegv { nf: 8, eew: SEW::E32, data: vlx(operands)?},
-            "vluxseg8ei64.v" => Vluxsegv { nf: 8, eew: SEW::E64, data: vlx(operands)?},
+            "vluxseg1ei8.v" => Vluxsegv {
+                nf: 1,
+                eew: SEW::E8,
+                data: vlx(operands)?,
+            },
+            "vluxseg1ei16.v" => Vluxsegv {
+                nf: 1,
+                eew: SEW::E16,
+                data: vlx(operands)?,
+            },
+            "vluxseg1ei32.v" => Vluxsegv {
+                nf: 1,
+                eew: SEW::E32,
+                data: vlx(operands)?,
+            },
+            "vluxseg1ei64.v" => Vluxsegv {
+                nf: 1,
+                eew: SEW::E64,
+                data: vlx(operands)?,
+            },
+            "vluxseg2ei8.v" => Vluxsegv {
+                nf: 2,
+                eew: SEW::E8,
+                data: vlx(operands)?,
+            },
+            "vluxseg2ei16.v" => Vluxsegv {
+                nf: 2,
+                eew: SEW::E16,
+                data: vlx(operands)?,
+            },
+            "vluxseg2ei32.v" => Vluxsegv {
+                nf: 2,
+                eew: SEW::E32,
+                data: vlx(operands)?,
+            },
+            "vluxseg2ei64.v" => Vluxsegv {
+                nf: 2,
+                eew: SEW::E64,
+                data: vlx(operands)?,
+            },
+            "vluxseg3ei8.v" => Vluxsegv {
+                nf: 3,
+                eew: SEW::E8,
+                data: vlx(operands)?,
+            },
+            "vluxseg3ei16.v" => Vluxsegv {
+                nf: 3,
+                eew: SEW::E16,
+                data: vlx(operands)?,
+            },
+            "vluxseg3ei32.v" => Vluxsegv {
+                nf: 3,
+                eew: SEW::E32,
+                data: vlx(operands)?,
+            },
+            "vluxseg3ei64.v" => Vluxsegv {
+                nf: 3,
+                eew: SEW::E64,
+                data: vlx(operands)?,
+            },
+            "vluxseg4ei8.v" => Vluxsegv {
+                nf: 4,
+                eew: SEW::E8,
+                data: vlx(operands)?,
+            },
+            "vluxseg4ei16.v" => Vluxsegv {
+                nf: 4,
+                eew: SEW::E16,
+                data: vlx(operands)?,
+            },
+            "vluxseg4ei32.v" => Vluxsegv {
+                nf: 4,
+                eew: SEW::E32,
+                data: vlx(operands)?,
+            },
+            "vluxseg4ei64.v" => Vluxsegv {
+                nf: 4,
+                eew: SEW::E64,
+                data: vlx(operands)?,
+            },
+            "vluxseg5ei8.v" => Vluxsegv {
+                nf: 5,
+                eew: SEW::E8,
+                data: vlx(operands)?,
+            },
+            "vluxseg5ei16.v" => Vluxsegv {
+                nf: 5,
+                eew: SEW::E16,
+                data: vlx(operands)?,
+            },
+            "vluxseg5ei32.v" => Vluxsegv {
+                nf: 5,
+                eew: SEW::E32,
+                data: vlx(operands)?,
+            },
+            "vluxseg5ei64.v" => Vluxsegv {
+                nf: 5,
+                eew: SEW::E64,
+                data: vlx(operands)?,
+            },
+            "vluxseg6ei8.v" => Vluxsegv {
+                nf: 6,
+                eew: SEW::E8,
+                data: vlx(operands)?,
+            },
+            "vluxseg6ei16.v" => Vluxsegv {
+                nf: 6,
+                eew: SEW::E16,
+                data: vlx(operands)?,
+            },
+            "vluxseg6ei32.v" => Vluxsegv {
+                nf: 6,
+                eew: SEW::E32,
+                data: vlx(operands)?,
+            },
+            "vluxseg6ei64.v" => Vluxsegv {
+                nf: 6,
+                eew: SEW::E64,
+                data: vlx(operands)?,
+            },
+            "vluxseg7ei8.v" => Vluxsegv {
+                nf: 7,
+                eew: SEW::E8,
+                data: vlx(operands)?,
+            },
+            "vluxseg7ei16.v" => Vluxsegv {
+                nf: 7,
+                eew: SEW::E16,
+                data: vlx(operands)?,
+            },
+            "vluxseg7ei32.v" => Vluxsegv {
+                nf: 7,
+                eew: SEW::E32,
+                data: vlx(operands)?,
+            },
+            "vluxseg7ei64.v" => Vluxsegv {
+                nf: 7,
+                eew: SEW::E64,
+                data: vlx(operands)?,
+            },
+            "vluxseg8ei8.v" => Vluxsegv {
+                nf: 8,
+                eew: SEW::E8,
+                data: vlx(operands)?,
+            },
+            "vluxseg8ei16.v" => Vluxsegv {
+                nf: 8,
+                eew: SEW::E16,
+                data: vlx(operands)?,
+            },
+            "vluxseg8ei32.v" => Vluxsegv {
+                nf: 8,
+                eew: SEW::E32,
+                data: vlx(operands)?,
+            },
+            "vluxseg8ei64.v" => Vluxsegv {
+                nf: 8,
+                eew: SEW::E64,
+                data: vlx(operands)?,
+            },
 
-            "vloxseg1ei8.v"  => Vloxsegv { nf: 1, eew: SEW::E8,  data: vlx(operands)?},
-            "vloxseg1ei16.v" => Vloxsegv { nf: 1, eew: SEW::E16, data: vlx(operands)?},
-            "vloxseg1ei32.v" => Vloxsegv { nf: 1, eew: SEW::E32, data: vlx(operands)?},
-            "vloxseg1ei64.v" => Vloxsegv { nf: 1, eew: SEW::E64, data: vlx(operands)?},
-            "vloxseg2ei8.v"  => Vloxsegv { nf: 2, eew: SEW::E8,  data: vlx(operands)?},
-            "vloxseg2ei16.v" => Vloxsegv { nf: 2, eew: SEW::E16, data: vlx(operands)?},
-            "vloxseg2ei32.v" => Vloxsegv { nf: 2, eew: SEW::E32, data: vlx(operands)?},
-            "vloxseg2ei64.v" => Vloxsegv { nf: 2, eew: SEW::E64, data: vlx(operands)?},
-            "vloxseg3ei8.v"  => Vloxsegv { nf: 3, eew: SEW::E8,  data: vlx(operands)?},
-            "vloxseg3ei16.v" => Vloxsegv { nf: 3, eew: SEW::E16, data: vlx(operands)?},
-            "vloxseg3ei32.v" => Vloxsegv { nf: 3, eew: SEW::E32, data: vlx(operands)?},
-            "vloxseg3ei64.v" => Vloxsegv { nf: 3, eew: SEW::E64, data: vlx(operands)?},
-            "vloxseg4ei8.v"  => Vloxsegv { nf: 4, eew: SEW::E8,  data: vlx(operands)?},
-            "vloxseg4ei16.v" => Vloxsegv { nf: 4, eew: SEW::E16, data: vlx(operands)?},
-            "vloxseg4ei32.v" => Vloxsegv { nf: 4, eew: SEW::E32, data: vlx(operands)?},
-            "vloxseg4ei64.v" => Vloxsegv { nf: 4, eew: SEW::E64, data: vlx(operands)?},
-            "vloxseg5ei8.v"  => Vloxsegv { nf: 5, eew: SEW::E8,  data: vlx(operands)?},
-            "vloxseg5ei16.v" => Vloxsegv { nf: 5, eew: SEW::E16, data: vlx(operands)?},
-            "vloxseg5ei32.v" => Vloxsegv { nf: 5, eew: SEW::E32, data: vlx(operands)?},
-            "vloxseg5ei64.v" => Vloxsegv { nf: 5, eew: SEW::E64, data: vlx(operands)?},
-            "vloxseg6ei8.v"  => Vloxsegv { nf: 6, eew: SEW::E8,  data: vlx(operands)?},
-            "vloxseg6ei16.v" => Vloxsegv { nf: 6, eew: SEW::E16, data: vlx(operands)?},
-            "vloxseg6ei32.v" => Vloxsegv { nf: 6, eew: SEW::E32, data: vlx(operands)?},
-            "vloxseg6ei64.v" => Vloxsegv { nf: 6, eew: SEW::E64, data: vlx(operands)?},
-            "vloxseg7ei8.v"  => Vloxsegv { nf: 7, eew: SEW::E8,  data: vlx(operands)?},
-            "vloxseg7ei16.v" => Vloxsegv { nf: 7, eew: SEW::E16, data: vlx(operands)?},
-            "vloxseg7ei32.v" => Vloxsegv { nf: 7, eew: SEW::E32, data: vlx(operands)?},
-            "vloxseg7ei64.v" => Vloxsegv { nf: 7, eew: SEW::E64, data: vlx(operands)?},
-            "vloxseg8ei8.v"  => Vloxsegv { nf: 8, eew: SEW::E8,  data: vlx(operands)?},
-            "vloxseg8ei16.v" => Vloxsegv { nf: 8, eew: SEW::E16, data: vlx(operands)?},
-            "vloxseg8ei32.v" => Vloxsegv { nf: 8, eew: SEW::E32, data: vlx(operands)?},
-            "vloxseg8ei64.v" => Vloxsegv { nf: 8, eew: SEW::E64, data: vlx(operands)?},
+            "vloxseg1ei8.v" => Vloxsegv {
+                nf: 1,
+                eew: SEW::E8,
+                data: vlx(operands)?,
+            },
+            "vloxseg1ei16.v" => Vloxsegv {
+                nf: 1,
+                eew: SEW::E16,
+                data: vlx(operands)?,
+            },
+            "vloxseg1ei32.v" => Vloxsegv {
+                nf: 1,
+                eew: SEW::E32,
+                data: vlx(operands)?,
+            },
+            "vloxseg1ei64.v" => Vloxsegv {
+                nf: 1,
+                eew: SEW::E64,
+                data: vlx(operands)?,
+            },
+            "vloxseg2ei8.v" => Vloxsegv {
+                nf: 2,
+                eew: SEW::E8,
+                data: vlx(operands)?,
+            },
+            "vloxseg2ei16.v" => Vloxsegv {
+                nf: 2,
+                eew: SEW::E16,
+                data: vlx(operands)?,
+            },
+            "vloxseg2ei32.v" => Vloxsegv {
+                nf: 2,
+                eew: SEW::E32,
+                data: vlx(operands)?,
+            },
+            "vloxseg2ei64.v" => Vloxsegv {
+                nf: 2,
+                eew: SEW::E64,
+                data: vlx(operands)?,
+            },
+            "vloxseg3ei8.v" => Vloxsegv {
+                nf: 3,
+                eew: SEW::E8,
+                data: vlx(operands)?,
+            },
+            "vloxseg3ei16.v" => Vloxsegv {
+                nf: 3,
+                eew: SEW::E16,
+                data: vlx(operands)?,
+            },
+            "vloxseg3ei32.v" => Vloxsegv {
+                nf: 3,
+                eew: SEW::E32,
+                data: vlx(operands)?,
+            },
+            "vloxseg3ei64.v" => Vloxsegv {
+                nf: 3,
+                eew: SEW::E64,
+                data: vlx(operands)?,
+            },
+            "vloxseg4ei8.v" => Vloxsegv {
+                nf: 4,
+                eew: SEW::E8,
+                data: vlx(operands)?,
+            },
+            "vloxseg4ei16.v" => Vloxsegv {
+                nf: 4,
+                eew: SEW::E16,
+                data: vlx(operands)?,
+            },
+            "vloxseg4ei32.v" => Vloxsegv {
+                nf: 4,
+                eew: SEW::E32,
+                data: vlx(operands)?,
+            },
+            "vloxseg4ei64.v" => Vloxsegv {
+                nf: 4,
+                eew: SEW::E64,
+                data: vlx(operands)?,
+            },
+            "vloxseg5ei8.v" => Vloxsegv {
+                nf: 5,
+                eew: SEW::E8,
+                data: vlx(operands)?,
+            },
+            "vloxseg5ei16.v" => Vloxsegv {
+                nf: 5,
+                eew: SEW::E16,
+                data: vlx(operands)?,
+            },
+            "vloxseg5ei32.v" => Vloxsegv {
+                nf: 5,
+                eew: SEW::E32,
+                data: vlx(operands)?,
+            },
+            "vloxseg5ei64.v" => Vloxsegv {
+                nf: 5,
+                eew: SEW::E64,
+                data: vlx(operands)?,
+            },
+            "vloxseg6ei8.v" => Vloxsegv {
+                nf: 6,
+                eew: SEW::E8,
+                data: vlx(operands)?,
+            },
+            "vloxseg6ei16.v" => Vloxsegv {
+                nf: 6,
+                eew: SEW::E16,
+                data: vlx(operands)?,
+            },
+            "vloxseg6ei32.v" => Vloxsegv {
+                nf: 6,
+                eew: SEW::E32,
+                data: vlx(operands)?,
+            },
+            "vloxseg6ei64.v" => Vloxsegv {
+                nf: 6,
+                eew: SEW::E64,
+                data: vlx(operands)?,
+            },
+            "vloxseg7ei8.v" => Vloxsegv {
+                nf: 7,
+                eew: SEW::E8,
+                data: vlx(operands)?,
+            },
+            "vloxseg7ei16.v" => Vloxsegv {
+                nf: 7,
+                eew: SEW::E16,
+                data: vlx(operands)?,
+            },
+            "vloxseg7ei32.v" => Vloxsegv {
+                nf: 7,
+                eew: SEW::E32,
+                data: vlx(operands)?,
+            },
+            "vloxseg7ei64.v" => Vloxsegv {
+                nf: 7,
+                eew: SEW::E64,
+                data: vlx(operands)?,
+            },
+            "vloxseg8ei8.v" => Vloxsegv {
+                nf: 8,
+                eew: SEW::E8,
+                data: vlx(operands)?,
+            },
+            "vloxseg8ei16.v" => Vloxsegv {
+                nf: 8,
+                eew: SEW::E16,
+                data: vlx(operands)?,
+            },
+            "vloxseg8ei32.v" => Vloxsegv {
+                nf: 8,
+                eew: SEW::E32,
+                data: vlx(operands)?,
+            },
+            "vloxseg8ei64.v" => Vloxsegv {
+                nf: 8,
+                eew: SEW::E64,
+                data: vlx(operands)?,
+            },
 
-            "vsuxseg1ei8.v"  => Vsuxsegv { nf: 1, eew: SEW::E8,  data: vsx(operands)?},
-            "vsuxseg1ei16.v" => Vsuxsegv { nf: 1, eew: SEW::E16, data: vsx(operands)?},
-            "vsuxseg1ei32.v" => Vsuxsegv { nf: 1, eew: SEW::E32, data: vsx(operands)?},
-            "vsuxseg1ei64.v" => Vsuxsegv { nf: 1, eew: SEW::E64, data: vsx(operands)?},
-            "vsuxseg2ei8.v"  => Vsuxsegv { nf: 2, eew: SEW::E8,  data: vsx(operands)?},
-            "vsuxseg2ei16.v" => Vsuxsegv { nf: 2, eew: SEW::E16, data: vsx(operands)?},
-            "vsuxseg2ei32.v" => Vsuxsegv { nf: 2, eew: SEW::E32, data: vsx(operands)?},
-            "vsuxseg2ei64.v" => Vsuxsegv { nf: 2, eew: SEW::E64, data: vsx(operands)?},
-            "vsuxseg3ei8.v"  => Vsuxsegv { nf: 3, eew: SEW::E8,  data: vsx(operands)?},
-            "vsuxseg3ei16.v" => Vsuxsegv { nf: 3, eew: SEW::E16, data: vsx(operands)?},
-            "vsuxseg3ei32.v" => Vsuxsegv { nf: 3, eew: SEW::E32, data: vsx(operands)?},
-            "vsuxseg3ei64.v" => Vsuxsegv { nf: 3, eew: SEW::E64, data: vsx(operands)?},
-            "vsuxseg4ei8.v"  => Vsuxsegv { nf: 4, eew: SEW::E8,  data: vsx(operands)?},
-            "vsuxseg4ei16.v" => Vsuxsegv { nf: 4, eew: SEW::E16, data: vsx(operands)?},
-            "vsuxseg4ei32.v" => Vsuxsegv { nf: 4, eew: SEW::E32, data: vsx(operands)?},
-            "vsuxseg4ei64.v" => Vsuxsegv { nf: 4, eew: SEW::E64, data: vsx(operands)?},
-            "vsuxseg5ei8.v"  => Vsuxsegv { nf: 5, eew: SEW::E8,  data: vsx(operands)?},
-            "vsuxseg5ei16.v" => Vsuxsegv { nf: 5, eew: SEW::E16, data: vsx(operands)?},
-            "vsuxseg5ei32.v" => Vsuxsegv { nf: 5, eew: SEW::E32, data: vsx(operands)?},
-            "vsuxseg5ei64.v" => Vsuxsegv { nf: 5, eew: SEW::E64, data: vsx(operands)?},
-            "vsuxseg6ei8.v"  => Vsuxsegv { nf: 6, eew: SEW::E8,  data: vsx(operands)?},
-            "vsuxseg6ei16.v" => Vsuxsegv { nf: 6, eew: SEW::E16, data: vsx(operands)?},
-            "vsuxseg6ei32.v" => Vsuxsegv { nf: 6, eew: SEW::E32, data: vsx(operands)?},
-            "vsuxseg6ei64.v" => Vsuxsegv { nf: 6, eew: SEW::E64, data: vsx(operands)?},
-            "vsuxseg7ei8.v"  => Vsuxsegv { nf: 7, eew: SEW::E8,  data: vsx(operands)?},
-            "vsuxseg7ei16.v" => Vsuxsegv { nf: 7, eew: SEW::E16, data: vsx(operands)?},
-            "vsuxseg7ei32.v" => Vsuxsegv { nf: 7, eew: SEW::E32, data: vsx(operands)?},
-            "vsuxseg7ei64.v" => Vsuxsegv { nf: 7, eew: SEW::E64, data: vsx(operands)?},
-            "vsuxseg8ei8.v"  => Vsuxsegv { nf: 8, eew: SEW::E8,  data: vsx(operands)?},
-            "vsuxseg8ei16.v" => Vsuxsegv { nf: 8, eew: SEW::E16, data: vsx(operands)?},
-            "vsuxseg8ei32.v" => Vsuxsegv { nf: 8, eew: SEW::E32, data: vsx(operands)?},
-            "vsuxseg8ei64.v" => Vsuxsegv { nf: 8, eew: SEW::E64, data: vsx(operands)?},
-            
-            "vsoxseg1ei8.v"  => Vsoxsegv { nf: 1, eew: SEW::E8,  data: vsx(operands)?},
-            "vsoxseg1ei16.v" => Vsoxsegv { nf: 1, eew: SEW::E16, data: vsx(operands)?},
-            "vsoxseg1ei32.v" => Vsoxsegv { nf: 1, eew: SEW::E32, data: vsx(operands)?},
-            "vsoxseg1ei64.v" => Vsoxsegv { nf: 1, eew: SEW::E64, data: vsx(operands)?},
-            "vsoxseg2ei8.v"  => Vsoxsegv { nf: 2, eew: SEW::E8,  data: vsx(operands)?},
-            "vsoxseg2ei16.v" => Vsoxsegv { nf: 2, eew: SEW::E16, data: vsx(operands)?},
-            "vsoxseg2ei32.v" => Vsoxsegv { nf: 2, eew: SEW::E32, data: vsx(operands)?},
-            "vsoxseg2ei64.v" => Vsoxsegv { nf: 2, eew: SEW::E64, data: vsx(operands)?},
-            "vsoxseg3ei8.v"  => Vsoxsegv { nf: 3, eew: SEW::E8,  data: vsx(operands)?},
-            "vsoxseg3ei16.v" => Vsoxsegv { nf: 3, eew: SEW::E16, data: vsx(operands)?},
-            "vsoxseg3ei32.v" => Vsoxsegv { nf: 3, eew: SEW::E32, data: vsx(operands)?},
-            "vsoxseg3ei64.v" => Vsoxsegv { nf: 3, eew: SEW::E64, data: vsx(operands)?},
-            "vsoxseg4ei8.v"  => Vsoxsegv { nf: 4, eew: SEW::E8,  data: vsx(operands)?},
-            "vsoxseg4ei16.v" => Vsoxsegv { nf: 4, eew: SEW::E16, data: vsx(operands)?},
-            "vsoxseg4ei32.v" => Vsoxsegv { nf: 4, eew: SEW::E32, data: vsx(operands)?},
-            "vsoxseg4ei64.v" => Vsoxsegv { nf: 4, eew: SEW::E64, data: vsx(operands)?},
-            "vsoxseg5ei8.v"  => Vsoxsegv { nf: 5, eew: SEW::E8,  data: vsx(operands)?},
-            "vsoxseg5ei16.v" => Vsoxsegv { nf: 5, eew: SEW::E16, data: vsx(operands)?},
-            "vsoxseg5ei32.v" => Vsoxsegv { nf: 5, eew: SEW::E32, data: vsx(operands)?},
-            "vsoxseg5ei64.v" => Vsoxsegv { nf: 5, eew: SEW::E64, data: vsx(operands)?},
-            "vsoxseg6ei8.v"  => Vsoxsegv { nf: 6, eew: SEW::E8,  data: vsx(operands)?},
-            "vsoxseg6ei16.v" => Vsoxsegv { nf: 6, eew: SEW::E16, data: vsx(operands)?},
-            "vsoxseg6ei32.v" => Vsoxsegv { nf: 6, eew: SEW::E32, data: vsx(operands)?},
-            "vsoxseg6ei64.v" => Vsoxsegv { nf: 6, eew: SEW::E64, data: vsx(operands)?},
-            "vsoxseg7ei8.v"  => Vsoxsegv { nf: 7, eew: SEW::E8,  data: vsx(operands)?},
-            "vsoxseg7ei16.v" => Vsoxsegv { nf: 7, eew: SEW::E16, data: vsx(operands)?},
-            "vsoxseg7ei32.v" => Vsoxsegv { nf: 7, eew: SEW::E32, data: vsx(operands)?},
-            "vsoxseg7ei64.v" => Vsoxsegv { nf: 7, eew: SEW::E64, data: vsx(operands)?},
-            "vsoxseg8ei8.v"  => Vsoxsegv { nf: 8, eew: SEW::E8,  data: vsx(operands)?},
-            "vsoxseg8ei16.v" => Vsoxsegv { nf: 8, eew: SEW::E16, data: vsx(operands)?},
-            "vsoxseg8ei32.v" => Vsoxsegv { nf: 8, eew: SEW::E32, data: vsx(operands)?},
-            "vsoxseg8ei64.v" => Vsoxsegv { nf: 8, eew: SEW::E64, data: vsx(operands)?},
+            "vsuxseg1ei8.v" => Vsuxsegv {
+                nf: 1,
+                eew: SEW::E8,
+                data: vsx(operands)?,
+            },
+            "vsuxseg1ei16.v" => Vsuxsegv {
+                nf: 1,
+                eew: SEW::E16,
+                data: vsx(operands)?,
+            },
+            "vsuxseg1ei32.v" => Vsuxsegv {
+                nf: 1,
+                eew: SEW::E32,
+                data: vsx(operands)?,
+            },
+            "vsuxseg1ei64.v" => Vsuxsegv {
+                nf: 1,
+                eew: SEW::E64,
+                data: vsx(operands)?,
+            },
+            "vsuxseg2ei8.v" => Vsuxsegv {
+                nf: 2,
+                eew: SEW::E8,
+                data: vsx(operands)?,
+            },
+            "vsuxseg2ei16.v" => Vsuxsegv {
+                nf: 2,
+                eew: SEW::E16,
+                data: vsx(operands)?,
+            },
+            "vsuxseg2ei32.v" => Vsuxsegv {
+                nf: 2,
+                eew: SEW::E32,
+                data: vsx(operands)?,
+            },
+            "vsuxseg2ei64.v" => Vsuxsegv {
+                nf: 2,
+                eew: SEW::E64,
+                data: vsx(operands)?,
+            },
+            "vsuxseg3ei8.v" => Vsuxsegv {
+                nf: 3,
+                eew: SEW::E8,
+                data: vsx(operands)?,
+            },
+            "vsuxseg3ei16.v" => Vsuxsegv {
+                nf: 3,
+                eew: SEW::E16,
+                data: vsx(operands)?,
+            },
+            "vsuxseg3ei32.v" => Vsuxsegv {
+                nf: 3,
+                eew: SEW::E32,
+                data: vsx(operands)?,
+            },
+            "vsuxseg3ei64.v" => Vsuxsegv {
+                nf: 3,
+                eew: SEW::E64,
+                data: vsx(operands)?,
+            },
+            "vsuxseg4ei8.v" => Vsuxsegv {
+                nf: 4,
+                eew: SEW::E8,
+                data: vsx(operands)?,
+            },
+            "vsuxseg4ei16.v" => Vsuxsegv {
+                nf: 4,
+                eew: SEW::E16,
+                data: vsx(operands)?,
+            },
+            "vsuxseg4ei32.v" => Vsuxsegv {
+                nf: 4,
+                eew: SEW::E32,
+                data: vsx(operands)?,
+            },
+            "vsuxseg4ei64.v" => Vsuxsegv {
+                nf: 4,
+                eew: SEW::E64,
+                data: vsx(operands)?,
+            },
+            "vsuxseg5ei8.v" => Vsuxsegv {
+                nf: 5,
+                eew: SEW::E8,
+                data: vsx(operands)?,
+            },
+            "vsuxseg5ei16.v" => Vsuxsegv {
+                nf: 5,
+                eew: SEW::E16,
+                data: vsx(operands)?,
+            },
+            "vsuxseg5ei32.v" => Vsuxsegv {
+                nf: 5,
+                eew: SEW::E32,
+                data: vsx(operands)?,
+            },
+            "vsuxseg5ei64.v" => Vsuxsegv {
+                nf: 5,
+                eew: SEW::E64,
+                data: vsx(operands)?,
+            },
+            "vsuxseg6ei8.v" => Vsuxsegv {
+                nf: 6,
+                eew: SEW::E8,
+                data: vsx(operands)?,
+            },
+            "vsuxseg6ei16.v" => Vsuxsegv {
+                nf: 6,
+                eew: SEW::E16,
+                data: vsx(operands)?,
+            },
+            "vsuxseg6ei32.v" => Vsuxsegv {
+                nf: 6,
+                eew: SEW::E32,
+                data: vsx(operands)?,
+            },
+            "vsuxseg6ei64.v" => Vsuxsegv {
+                nf: 6,
+                eew: SEW::E64,
+                data: vsx(operands)?,
+            },
+            "vsuxseg7ei8.v" => Vsuxsegv {
+                nf: 7,
+                eew: SEW::E8,
+                data: vsx(operands)?,
+            },
+            "vsuxseg7ei16.v" => Vsuxsegv {
+                nf: 7,
+                eew: SEW::E16,
+                data: vsx(operands)?,
+            },
+            "vsuxseg7ei32.v" => Vsuxsegv {
+                nf: 7,
+                eew: SEW::E32,
+                data: vsx(operands)?,
+            },
+            "vsuxseg7ei64.v" => Vsuxsegv {
+                nf: 7,
+                eew: SEW::E64,
+                data: vsx(operands)?,
+            },
+            "vsuxseg8ei8.v" => Vsuxsegv {
+                nf: 8,
+                eew: SEW::E8,
+                data: vsx(operands)?,
+            },
+            "vsuxseg8ei16.v" => Vsuxsegv {
+                nf: 8,
+                eew: SEW::E16,
+                data: vsx(operands)?,
+            },
+            "vsuxseg8ei32.v" => Vsuxsegv {
+                nf: 8,
+                eew: SEW::E32,
+                data: vsx(operands)?,
+            },
+            "vsuxseg8ei64.v" => Vsuxsegv {
+                nf: 8,
+                eew: SEW::E64,
+                data: vsx(operands)?,
+            },
 
-            "vl1re8.v" => Vlrv { nf: 1, eew: SEW::E8,  data: vlr(operands)?},
-            "vl1re16.v" => Vlrv { nf: 1, eew: SEW::E16, data: vlr(operands)?},
-            "vl1re32.v" => Vlrv { nf: 1, eew: SEW::E32, data: vlr(operands)?},
-            "vl1re64.v" => Vlrv { nf: 1, eew: SEW::E64, data: vlr(operands)?},
-            "vl2re8.v" => Vlrv { nf: 2, eew: SEW::E8,  data: vlr(operands)?},
-            "vl2re16.v" => Vlrv { nf: 2, eew: SEW::E16, data: vlr(operands)?},
-            "vl2re32.v" => Vlrv { nf: 2, eew: SEW::E32, data: vlr(operands)?},
-            "vl2re64.v" => Vlrv { nf: 2, eew: SEW::E64, data: vlr(operands)?},
-            "vl4re8.v" => Vlrv { nf: 4, eew: SEW::E8,  data: vlr(operands)?},
-            "vl4re16.v" => Vlrv { nf: 4, eew: SEW::E16, data: vlr(operands)?},
-            "vl4re32.v" => Vlrv { nf: 4, eew: SEW::E32, data: vlr(operands)?},
-            "vl4re64.v" => Vlrv { nf: 4, eew: SEW::E64, data: vlr(operands)?},
-            "vl8re8.v" => Vlrv { nf: 8, eew: SEW::E8,  data: vlr(operands)?},
-            "vl8re16.v" => Vlrv { nf: 8, eew: SEW::E16, data: vlr(operands)?},
-            "vl8re32.v" => Vlrv { nf: 8, eew: SEW::E32, data: vlr(operands)?},
-            "vl8re64.v" => Vlrv { nf: 8, eew: SEW::E64, data: vlr(operands)?},
+            "vsoxseg1ei8.v" => Vsoxsegv {
+                nf: 1,
+                eew: SEW::E8,
+                data: vsx(operands)?,
+            },
+            "vsoxseg1ei16.v" => Vsoxsegv {
+                nf: 1,
+                eew: SEW::E16,
+                data: vsx(operands)?,
+            },
+            "vsoxseg1ei32.v" => Vsoxsegv {
+                nf: 1,
+                eew: SEW::E32,
+                data: vsx(operands)?,
+            },
+            "vsoxseg1ei64.v" => Vsoxsegv {
+                nf: 1,
+                eew: SEW::E64,
+                data: vsx(operands)?,
+            },
+            "vsoxseg2ei8.v" => Vsoxsegv {
+                nf: 2,
+                eew: SEW::E8,
+                data: vsx(operands)?,
+            },
+            "vsoxseg2ei16.v" => Vsoxsegv {
+                nf: 2,
+                eew: SEW::E16,
+                data: vsx(operands)?,
+            },
+            "vsoxseg2ei32.v" => Vsoxsegv {
+                nf: 2,
+                eew: SEW::E32,
+                data: vsx(operands)?,
+            },
+            "vsoxseg2ei64.v" => Vsoxsegv {
+                nf: 2,
+                eew: SEW::E64,
+                data: vsx(operands)?,
+            },
+            "vsoxseg3ei8.v" => Vsoxsegv {
+                nf: 3,
+                eew: SEW::E8,
+                data: vsx(operands)?,
+            },
+            "vsoxseg3ei16.v" => Vsoxsegv {
+                nf: 3,
+                eew: SEW::E16,
+                data: vsx(operands)?,
+            },
+            "vsoxseg3ei32.v" => Vsoxsegv {
+                nf: 3,
+                eew: SEW::E32,
+                data: vsx(operands)?,
+            },
+            "vsoxseg3ei64.v" => Vsoxsegv {
+                nf: 3,
+                eew: SEW::E64,
+                data: vsx(operands)?,
+            },
+            "vsoxseg4ei8.v" => Vsoxsegv {
+                nf: 4,
+                eew: SEW::E8,
+                data: vsx(operands)?,
+            },
+            "vsoxseg4ei16.v" => Vsoxsegv {
+                nf: 4,
+                eew: SEW::E16,
+                data: vsx(operands)?,
+            },
+            "vsoxseg4ei32.v" => Vsoxsegv {
+                nf: 4,
+                eew: SEW::E32,
+                data: vsx(operands)?,
+            },
+            "vsoxseg4ei64.v" => Vsoxsegv {
+                nf: 4,
+                eew: SEW::E64,
+                data: vsx(operands)?,
+            },
+            "vsoxseg5ei8.v" => Vsoxsegv {
+                nf: 5,
+                eew: SEW::E8,
+                data: vsx(operands)?,
+            },
+            "vsoxseg5ei16.v" => Vsoxsegv {
+                nf: 5,
+                eew: SEW::E16,
+                data: vsx(operands)?,
+            },
+            "vsoxseg5ei32.v" => Vsoxsegv {
+                nf: 5,
+                eew: SEW::E32,
+                data: vsx(operands)?,
+            },
+            "vsoxseg5ei64.v" => Vsoxsegv {
+                nf: 5,
+                eew: SEW::E64,
+                data: vsx(operands)?,
+            },
+            "vsoxseg6ei8.v" => Vsoxsegv {
+                nf: 6,
+                eew: SEW::E8,
+                data: vsx(operands)?,
+            },
+            "vsoxseg6ei16.v" => Vsoxsegv {
+                nf: 6,
+                eew: SEW::E16,
+                data: vsx(operands)?,
+            },
+            "vsoxseg6ei32.v" => Vsoxsegv {
+                nf: 6,
+                eew: SEW::E32,
+                data: vsx(operands)?,
+            },
+            "vsoxseg6ei64.v" => Vsoxsegv {
+                nf: 6,
+                eew: SEW::E64,
+                data: vsx(operands)?,
+            },
+            "vsoxseg7ei8.v" => Vsoxsegv {
+                nf: 7,
+                eew: SEW::E8,
+                data: vsx(operands)?,
+            },
+            "vsoxseg7ei16.v" => Vsoxsegv {
+                nf: 7,
+                eew: SEW::E16,
+                data: vsx(operands)?,
+            },
+            "vsoxseg7ei32.v" => Vsoxsegv {
+                nf: 7,
+                eew: SEW::E32,
+                data: vsx(operands)?,
+            },
+            "vsoxseg7ei64.v" => Vsoxsegv {
+                nf: 7,
+                eew: SEW::E64,
+                data: vsx(operands)?,
+            },
+            "vsoxseg8ei8.v" => Vsoxsegv {
+                nf: 8,
+                eew: SEW::E8,
+                data: vsx(operands)?,
+            },
+            "vsoxseg8ei16.v" => Vsoxsegv {
+                nf: 8,
+                eew: SEW::E16,
+                data: vsx(operands)?,
+            },
+            "vsoxseg8ei32.v" => Vsoxsegv {
+                nf: 8,
+                eew: SEW::E32,
+                data: vsx(operands)?,
+            },
+            "vsoxseg8ei64.v" => Vsoxsegv {
+                nf: 8,
+                eew: SEW::E64,
+                data: vsx(operands)?,
+            },
 
-            "vs1r.v" => Vsrv { nf: 1, data: vsr(operands)?},
-            "vs2r.v" => Vsrv { nf: 2, data: vsr(operands)?},
-            "vs4r.v" => Vsrv { nf: 4, data: vsr(operands)?},
-            "vs8r.v" => Vsrv { nf: 8, data: vsr(operands)?},
+            "vl1re8.v" => Vlrv {
+                nf: 1,
+                eew: SEW::E8,
+                data: vlr(operands)?,
+            },
+            "vl1re16.v" => Vlrv {
+                nf: 1,
+                eew: SEW::E16,
+                data: vlr(operands)?,
+            },
+            "vl1re32.v" => Vlrv {
+                nf: 1,
+                eew: SEW::E32,
+                data: vlr(operands)?,
+            },
+            "vl1re64.v" => Vlrv {
+                nf: 1,
+                eew: SEW::E64,
+                data: vlr(operands)?,
+            },
+            "vl2re8.v" => Vlrv {
+                nf: 2,
+                eew: SEW::E8,
+                data: vlr(operands)?,
+            },
+            "vl2re16.v" => Vlrv {
+                nf: 2,
+                eew: SEW::E16,
+                data: vlr(operands)?,
+            },
+            "vl2re32.v" => Vlrv {
+                nf: 2,
+                eew: SEW::E32,
+                data: vlr(operands)?,
+            },
+            "vl2re64.v" => Vlrv {
+                nf: 2,
+                eew: SEW::E64,
+                data: vlr(operands)?,
+            },
+            "vl4re8.v" => Vlrv {
+                nf: 4,
+                eew: SEW::E8,
+                data: vlr(operands)?,
+            },
+            "vl4re16.v" => Vlrv {
+                nf: 4,
+                eew: SEW::E16,
+                data: vlr(operands)?,
+            },
+            "vl4re32.v" => Vlrv {
+                nf: 4,
+                eew: SEW::E32,
+                data: vlr(operands)?,
+            },
+            "vl4re64.v" => Vlrv {
+                nf: 4,
+                eew: SEW::E64,
+                data: vlr(operands)?,
+            },
+            "vl8re8.v" => Vlrv {
+                nf: 8,
+                eew: SEW::E8,
+                data: vlr(operands)?,
+            },
+            "vl8re16.v" => Vlrv {
+                nf: 8,
+                eew: SEW::E16,
+                data: vlr(operands)?,
+            },
+            "vl8re32.v" => Vlrv {
+                nf: 8,
+                eew: SEW::E32,
+                data: vlr(operands)?,
+            },
+            "vl8re64.v" => Vlrv {
+                nf: 8,
+                eew: SEW::E64,
+                data: vlr(operands)?,
+            },
+
+            "vs1r.v" => Vsrv {
+                nf: 1,
+                data: vsr(operands)?,
+            },
+            "vs2r.v" => Vsrv {
+                nf: 2,
+                data: vsr(operands)?,
+            },
+            "vs4r.v" => Vsrv {
+                nf: 4,
+                data: vsr(operands)?,
+            },
+            "vs8r.v" => Vsrv {
+                nf: 8,
+                data: vsr(operands)?,
+            },
 
             "vadd.vv" => Vaddvv(opivv(operands)?),
             "vadd.vx" => Vaddvx(opivx(operands)?),
@@ -755,7 +1928,7 @@ impl Decoder {
             "vasub.vv" => Vasubvv(opmvv(operands)?),
             "vasub.vx" => Vasubvx(opmvx(operands)?),
 
-            "vslide1up.vx"  => Vslide1upvx(opmvx(operands)?),
+            "vslide1up.vx" => Vslide1upvx(opmvx(operands)?),
 
             "vslide1down.vx" => Vslide1downvx(opmvx(operands)?),
 
@@ -810,7 +1983,7 @@ impl Decoder {
 
             "vmulhsu.vv" => Vmulhsuvv(opmvv(operands)?),
             "vmulhsu.vx" => Vmulhsuvx(opmvx(operands)?),
-            
+
             "vmulh.vv" => Vmulhvv(opmvv(operands)?),
             "vmulh.vx" => Vmulhvx(opmvx(operands)?),
 
@@ -1021,271 +2194,470 @@ impl Decoder {
             "vfwnmsac.vf" => Vfwnmsacvf(opfvf_fma(operands)?),
 
             // Pseudoinstructions
-
-            "nop" => Addi(I {rd: 0, rs1: 0, imm12: 0}),
+            "nop" => Addi(I {
+                rd: 0,
+                rs1: 0,
+                imm12: 0,
+            }),
             "li" => {
                 let (reg, imm) = integer::pseudo::parse_op_imm_format(operands)?;
-                
-                if imm < 4096{
-                    Addi(I {rd: reg, rs1: 0, imm12: imm})
-                } else if imm == 4096 {
-                    Lui(U {rd: reg, imm20: imm})
-                } else {
-                    Fusion(
-                        Box::new(Lui(U {rd: reg, imm20: imm >> 12})),
-                        Box::new(Addi(I {rd: reg, rs1: reg, imm12: imm & 0xfff}))
-                    )
+
+                match imm.cmp(&4096) {
+                    Ordering::Less => Addi(I {
+                        rd: reg,
+                        rs1: 0,
+                        imm12: imm,
+                    }),
+                    Ordering::Equal => Lui(U {
+                        rd: reg,
+                        imm20: imm,
+                    }),
+                    Ordering::Greater => Fusion(
+                        Box::new(Lui(U {
+                            rd: reg,
+                            imm20: imm >> 12,
+                        })),
+                        Box::new(Addi(I {
+                            rd: reg,
+                            rs1: reg,
+                            imm12: imm & 0xfff,
+                        })),
+                    ),
                 }
-            },
+            }
             "mv" => {
                 let (rd, rs1) = integer::pseudo::parse_op_op_format(operands)?;
-                Addi(I {rd, rs1, imm12: 0})
-            },
+                Addi(I { rd, rs1, imm12: 0 })
+            }
             "not" => {
                 let (rd, rs1) = integer::pseudo::parse_op_op_format(operands)?;
-                Xori(I {rd, rs1, imm12: -1})
-            },
+                Xori(I { rd, rs1, imm12: -1 })
+            }
             "neg" => {
                 let (rd, rs2) = integer::pseudo::parse_op_op_format(operands)?;
-                Sub(R {rd, rs1: 0, rs2})
-            },
+                Sub(R { rd, rs1: 0, rs2 })
+            }
             "negw" => {
                 let (rd, rs2) = integer::pseudo::parse_op_op_format(operands)?;
-                Subw(R {rd, rs1: 0, rs2})
-            },
+                Subw(R { rd, rs1: 0, rs2 })
+            }
             "sext.b" => {
                 let (rd, rs1) = integer::pseudo::parse_op_op_format(operands)?;
                 Fusion(
-                    Box::new(Slli(I { rd, rs1, imm12: 64 - 8 })),
-                    Box::new(Srai(I { rd, rs1, imm12: 64 - 8 }))
+                    Box::new(Slli(I {
+                        rd,
+                        rs1,
+                        imm12: 64 - 8,
+                    })),
+                    Box::new(Srai(I {
+                        rd,
+                        rs1,
+                        imm12: 64 - 8,
+                    })),
                 )
-            },
+            }
             "sext.h" => {
                 let (rd, rs1) = integer::pseudo::parse_op_op_format(operands)?;
                 Fusion(
-                    Box::new(Slli(I { rd, rs1, imm12: 64 - 16 })),
-                    Box::new(Srai(I { rd, rs1, imm12: 64 - 16 }))
+                    Box::new(Slli(I {
+                        rd,
+                        rs1,
+                        imm12: 64 - 16,
+                    })),
+                    Box::new(Srai(I {
+                        rd,
+                        rs1,
+                        imm12: 64 - 16,
+                    })),
                 )
-            },
+            }
             "sext.w" => {
                 let (rd, rs1) = integer::pseudo::parse_op_op_format(operands)?;
                 Addiw(I { rd, rs1, imm12: 0 })
-            },
+            }
             "zext.b" => {
                 let (rd, rs1) = integer::pseudo::parse_op_op_format(operands)?;
-                Andi(I { rd: rd, rs1: rs1, imm12: 0xff })
-            },
+                Andi(I {
+                    rd,
+                    rs1,
+                    imm12: 0xff,
+                })
+            }
             "zext.h" => {
                 let (rd, rs1) = integer::pseudo::parse_op_op_format(operands)?;
                 Fusion(
-                    Box::new(Slli(I { rd, rs1, imm12: 64 - 16 })),
-                    Box::new(Srli(I { rd, rs1: rd, imm12: 64 - 16 }))
+                    Box::new(Slli(I {
+                        rd,
+                        rs1,
+                        imm12: 64 - 16,
+                    })),
+                    Box::new(Srli(I {
+                        rd,
+                        rs1: rd,
+                        imm12: 64 - 16,
+                    })),
                 )
-            },
+            }
             "zext.w" => {
                 let (rd, rs1) = integer::pseudo::parse_op_op_format(operands)?;
                 Fusion(
-                    Box::new(Slli(I { rd, rs1, imm12: 64 - 32 })),
-                    Box::new(Srli(I { rd, rs1: rd, imm12: 64 - 32 }))
+                    Box::new(Slli(I {
+                        rd,
+                        rs1,
+                        imm12: 64 - 32,
+                    })),
+                    Box::new(Srli(I {
+                        rd,
+                        rs1: rd,
+                        imm12: 64 - 32,
+                    })),
                 )
-            },
+            }
             "seqz" => {
                 let (rd, rs1) = integer::pseudo::parse_op_op_format(operands)?;
                 Sltiu(I { rd, rs1, imm12: 1 })
-            },
+            }
             "snez" => {
                 let (rd, rs1) = integer::pseudo::parse_op_op_format(operands)?;
                 Sltu(R { rd, rs1, rs2: 0 })
-            },
+            }
             "sltz" => {
                 let (rd, rs1) = integer::pseudo::parse_op_op_format(operands)?;
                 Slt(R { rd, rs1, rs2: 0 })
-            },
+            }
             "sgtz" => {
                 let (rd, rs1) = integer::pseudo::parse_op_op_format(operands)?;
-                Slt(R { rd, rs1: 0, rs2: rs1 })
-            },
+                Slt(R {
+                    rd,
+                    rs1: 0,
+                    rs2: rs1,
+                })
+            }
             "fmv.s" => {
                 let (rd, rs1) = float::pseudo::parse_op_op_format(operands)?;
                 Fsgnjs(R { rd, rs1, rs2: rs1 })
-            },
+            }
             "fabs.s" => {
                 let (rd, rs1) = float::pseudo::parse_op_op_format(operands)?;
                 Fsgnjxs(R { rd, rs1, rs2: rs1 })
-            },
+            }
             "fneg.s" => {
                 let (rd, rs1) = float::pseudo::parse_op_op_format(operands)?;
                 Fsgnjns(R { rd, rs1, rs2: rs1 })
-            },
+            }
             "fmv.d" => {
                 let (rd, rs1) = float::pseudo::parse_op_op_format(operands)?;
                 Fsgnjd(R { rd, rs1, rs2: rs1 })
-            },
+            }
             "fabs.d" => {
                 let (rd, rs1) = float::pseudo::parse_op_op_format(operands)?;
                 Fsgnjxd(R { rd, rs1, rs2: rs1 })
-            },
+            }
             "fneg.d" => {
                 let (rd, rs1) = float::pseudo::parse_op_op_format(operands)?;
                 Fsgnjnd(R { rd, rs1, rs2: rs1 })
-            },
+            }
             "beqz" => {
-                let (rs1, diff) = integer::pseudo::parse_op_label_format(operands, &labels, current_address)?;
-                Beq(S { rs1, rs2: 0, imm12: diff })
-            },
+                let (rs1, diff) =
+                    integer::pseudo::parse_op_label_format(operands, labels, current_address)?;
+                Beq(S {
+                    rs1,
+                    rs2: 0,
+                    imm12: diff,
+                })
+            }
             "bnez" => {
-                let (rs1, diff) = integer::pseudo::parse_op_label_format(operands, &labels, current_address)?;
-                Bne(S { rs1, rs2: 0, imm12: diff })
-            },
+                let (rs1, diff) =
+                    integer::pseudo::parse_op_label_format(operands, labels, current_address)?;
+                Bne(S {
+                    rs1,
+                    rs2: 0,
+                    imm12: diff,
+                })
+            }
             "blez" => {
-                let (rs1, diff) = integer::pseudo::parse_op_label_format(operands, &labels, current_address)?;
-                Bge(S { rs1, rs2: 0, imm12: diff })
-            },
+                let (rs1, diff) =
+                    integer::pseudo::parse_op_label_format(operands, labels, current_address)?;
+                Bge(S {
+                    rs1,
+                    rs2: 0,
+                    imm12: diff,
+                })
+            }
             "bgez" => {
-                let (rs1, diff) = integer::pseudo::parse_op_label_format(operands, &labels, current_address)?;
-                Bge(S { rs1, rs2: 0, imm12: diff })
-            },
+                let (rs1, diff) =
+                    integer::pseudo::parse_op_label_format(operands, labels, current_address)?;
+                Bge(S {
+                    rs1,
+                    rs2: 0,
+                    imm12: diff,
+                })
+            }
             "bltz" => {
-                let (rs1, diff) = integer::pseudo::parse_op_label_format(operands, &labels, current_address)?;
-                Blt(S { rs1, rs2: 0, imm12: diff })
-            },
+                let (rs1, diff) =
+                    integer::pseudo::parse_op_label_format(operands, labels, current_address)?;
+                Blt(S {
+                    rs1,
+                    rs2: 0,
+                    imm12: diff,
+                })
+            }
             "bgtz" => {
-                let (rs1, diff) = integer::pseudo::parse_op_label_format(operands, &labels, current_address)?;
-                Blt(S { rs1, rs2: 0, imm12: diff })
-            },
+                let (rs1, diff) =
+                    integer::pseudo::parse_op_label_format(operands, labels, current_address)?;
+                Blt(S {
+                    rs1,
+                    rs2: 0,
+                    imm12: diff,
+                })
+            }
             "bgt" => {
-                let (rs1, rs2, diff) = integer::pseudo::parse_op_op_label_format(operands, &labels, current_address)?;
-                Blt(S { rs1: rs2, rs2: rs1, imm12: diff })
-            },
+                let (rs1, rs2, diff) =
+                    integer::pseudo::parse_op_op_label_format(operands, labels, current_address)?;
+                Blt(S {
+                    rs1: rs2,
+                    rs2: rs1,
+                    imm12: diff,
+                })
+            }
             "ble" => {
-                let (rs1, rs2, diff) = integer::pseudo::parse_op_op_label_format(operands, &labels, current_address)?;
-                Bge(S { rs1: rs2, rs2: rs1, imm12: diff })
-            },
+                let (rs1, rs2, diff) =
+                    integer::pseudo::parse_op_op_label_format(operands, labels, current_address)?;
+                Bge(S {
+                    rs1: rs2,
+                    rs2: rs1,
+                    imm12: diff,
+                })
+            }
             "bgtu" => {
-                let (rs1, rs2, diff) = integer::pseudo::parse_op_op_label_format(operands, &labels, current_address)?;
-                Bltu(S { rs1: rs2, rs2: rs1, imm12: diff })
-            },
+                let (rs1, rs2, diff) =
+                    integer::pseudo::parse_op_op_label_format(operands, labels, current_address)?;
+                Bltu(S {
+                    rs1: rs2,
+                    rs2: rs1,
+                    imm12: diff,
+                })
+            }
             "bleu" => {
-                let (rs1, rs2, diff) = integer::pseudo::parse_op_op_label_format(operands, &labels, current_address)?;
-                Bgeu(S { rs1: rs2, rs2: rs1, imm12: diff })
-            },
+                let (rs1, rs2, diff) =
+                    integer::pseudo::parse_op_op_label_format(operands, labels, current_address)?;
+                Bgeu(S {
+                    rs1: rs2,
+                    rs2: rs1,
+                    imm12: diff,
+                })
+            }
             "j" => {
-                let diff = integer::pseudo::parse_label_format(operands, &labels, current_address)?;
+                let diff = integer::pseudo::parse_label_format(operands, labels, current_address)?;
                 Jal(U { rd: 0, imm20: diff })
-            },
+            }
             "jal" => {
-                let diff = integer::pseudo::parse_label_format(operands, &labels, current_address)?;
+                let diff = integer::pseudo::parse_label_format(operands, labels, current_address)?;
                 Jal(U { rd: 1, imm20: diff })
-            },
+            }
             "jr" => {
                 let rs1 = integer::pseudo::parse_op_format(operands)?;
-                Jalr(I { rd: 0, rs1, imm12: 0 })
-            },
+                Jalr(I {
+                    rd: 0,
+                    rs1,
+                    imm12: 0,
+                })
+            }
             "jalr" => {
                 let rs1 = integer::pseudo::parse_op_format(operands)?;
-                Jalr(I { rd: 1, rs1, imm12: 0 })
-            },
-            "ret" => Jalr(I { rd: 0, rs1: 1, imm12: 0 }),
+                Jalr(I {
+                    rd: 1,
+                    rs1,
+                    imm12: 0,
+                })
+            }
+            "ret" => Jalr(I {
+                rd: 0,
+                rs1: 1,
+                imm12: 0,
+            }),
             "call" => {
-                let diff = integer::pseudo::parse_label_format(operands, &labels, current_address)?;
+                let diff = integer::pseudo::parse_label_format(operands, labels, current_address)?;
                 Fusion(
-                    Box::new(Auipc(U { rd: 1, imm20:  diff >> 12 })), 
-                    Box::new(Jalr(I { rd: 1, rs1: 1, imm12: diff & 0xfff }))
+                    Box::new(Auipc(U {
+                        rd: 1,
+                        imm20: diff >> 12,
+                    })),
+                    Box::new(Jalr(I {
+                        rd: 1,
+                        rs1: 1,
+                        imm12: diff & 0xfff,
+                    })),
                 )
-            },
+            }
             "tail" => {
-                let diff = integer::pseudo::parse_label_format(operands, &labels, current_address)?;
+                let diff = integer::pseudo::parse_label_format(operands, labels, current_address)?;
                 Fusion(
-                    Box::new(Auipc(U { rd: 6, imm20:  diff >> 12 })), 
-                    Box::new(Jalr(I { rd: 0, rs1: 6, imm12: diff & 0xfff }))
+                    Box::new(Auipc(U {
+                        rd: 6,
+                        imm20: diff >> 12,
+                    })),
+                    Box::new(Jalr(I {
+                        rd: 0,
+                        rs1: 6,
+                        imm12: diff & 0xfff,
+                    })),
                 )
-            },
+            }
             "rdinstret" => {
                 let rd = integer::pseudo::parse_op_format(operands)?;
-                Csrrs(Csrr { rd, csr: alias::INSTRET, rs1: 0 })
-            },
+                Csrrs(Csrr {
+                    rd,
+                    csr: alias::INSTRET,
+                    rs1: 0,
+                })
+            }
             "rdinstreth" => {
                 let rd = integer::pseudo::parse_op_format(operands)?;
-                Csrrs(Csrr { rd, csr: alias::INSTRETH, rs1: 0 })
-            },
+                Csrrs(Csrr {
+                    rd,
+                    csr: alias::INSTRETH,
+                    rs1: 0,
+                })
+            }
             "rdcycle" => {
                 let rd = integer::pseudo::parse_op_format(operands)?;
-                Csrrs(Csrr { rd, csr: alias::CYCLE, rs1: 0 })
-            },
+                Csrrs(Csrr {
+                    rd,
+                    csr: alias::CYCLE,
+                    rs1: 0,
+                })
+            }
             "rdcycleh" => {
                 let rd = integer::pseudo::parse_op_format(operands)?;
-                Csrrs(Csrr { rd, csr: alias::CYCLEH, rs1: 0 })
-            },
+                Csrrs(Csrr {
+                    rd,
+                    csr: alias::CYCLEH,
+                    rs1: 0,
+                })
+            }
             "csrr" => {
                 let (rd, csr) = csr::pseudo::parse_op_csr_format(operands)?;
                 Csrrs(Csrr { rd, csr, rs1: 0 })
-            },
+            }
             "csrw" => {
                 let (csr, rs1) = csr::pseudo::parse_csr_op_format(operands)?;
                 Csrrw(Csrr { rd: 0, csr, rs1 })
-            },
+            }
             "csrs" => {
                 let (csr, rs1) = csr::pseudo::parse_csr_op_format(operands)?;
                 Csrrs(Csrr { rd: 0, csr, rs1 })
-            },
+            }
             "csrc" => {
                 let (csr, rs1) = csr::pseudo::parse_csr_op_format(operands)?;
                 Csrrc(Csrr { rd: 0, csr, rs1 })
-            },
+            }
             "frcsr" => {
                 let rd = integer::pseudo::parse_op_format(operands)?;
-                Csrrs(Csrr { rd, csr: alias::FCSR, rs1: 0 })
-            },
+                Csrrs(Csrr {
+                    rd,
+                    csr: alias::FCSR,
+                    rs1: 0,
+                })
+            }
             "fscsr" => {
                 let (rd, rs1) = integer::pseudo::parse_op_op_format(operands)?;
-                Csrrw(Csrr { rd: rd, csr: alias::FCSR, rs1 })
-            },
+                Csrrw(Csrr {
+                    rd: rd,
+                    csr: alias::FCSR,
+                    rs1,
+                })
+            }
             "fscsr" => {
                 let rs = integer::pseudo::parse_op_format(operands)?;
-                Csrrw(Csrr { rd: 0, csr: alias::FCSR, rs1: rs })
-            },
+                Csrrw(Csrr {
+                    rd: 0,
+                    csr: alias::FCSR,
+                    rs1: rs,
+                })
+            }
             "frrm" => {
                 let rd = integer::pseudo::parse_op_format(operands)?;
-                Csrrs(Csrr { rd, csr: alias::FRM, rs1: 0 })
-            },
+                Csrrs(Csrr {
+                    rd,
+                    csr: alias::FRM,
+                    rs1: 0,
+                })
+            }
             "fsrm" => {
                 let (rd, rs1) = integer::pseudo::parse_op_op_format(operands)?;
-                Csrrw(Csrr { rd: rd, csr: alias::FRM, rs1 })
-            },
+                Csrrw(Csrr {
+                    rd,
+                    csr: alias::FRM,
+                    rs1,
+                })
+            }
             "fsrm" => {
                 let rs = integer::pseudo::parse_op_format(operands)?;
-                Csrrw(Csrr { rd: 0, csr: alias::FRM, rs1: rs })
-            },
+                Csrrw(Csrr {
+                    rd: 0,
+                    csr: alias::FRM,
+                    rs1: rs,
+                })
+            }
             "fsrmi" => {
                 let (rd, imm) = integer::pseudo::parse_op_imm_format(operands)?;
-                Csrrwi(Csri { rd: rd, csr: alias::FRM, uimm: imm as u32 as usize })
-            },
+                Csrrwi(Csri {
+                    rd,
+                    csr: alias::FRM,
+                    uimm: imm as u32 as usize,
+                })
+            }
             "fsrmi" => {
                 let imm = integer::pseudo::parse_imm_format(operands)?;
-                Csrrwi(Csri { rd: 0, csr: alias::FRM, uimm: imm as u32 as usize })
-            },
+                Csrrwi(Csri {
+                    rd: 0,
+                    csr: alias::FRM,
+                    uimm: imm as u32 as usize,
+                })
+            }
             "frflags" => {
                 let rd = integer::pseudo::parse_op_format(operands)?;
-                Csrrs(Csrr { rd, csr: alias::FFLAGS, rs1: 0 })
-            },
+                Csrrs(Csrr {
+                    rd,
+                    csr: alias::FFLAGS,
+                    rs1: 0,
+                })
+            }
             "fsflags" => {
                 let (rd, rs1) = integer::pseudo::parse_op_op_format(operands)?;
-                Csrrw(Csrr { rd, csr: alias::FFLAGS, rs1 })
-            },
+                Csrrw(Csrr {
+                    rd,
+                    csr: alias::FFLAGS,
+                    rs1,
+                })
+            }
             "fsflags" => {
                 let rs1 = integer::pseudo::parse_op_format(operands)?;
-                Csrrw(Csrr { rd: 0, csr: alias::FFLAGS, rs1 })
+                Csrrw(Csrr {
+                    rd: 0,
+                    csr: alias::FFLAGS,
+                    rs1,
+                })
             }
             "fsflagsi" => {
                 let (rd, imm) = integer::pseudo::parse_op_imm_format(operands)?;
-                Csrrwi(Csri { rd, csr: alias::FFLAGS, uimm: imm as u32 as usize })
-            },
+                Csrrwi(Csri {
+                    rd,
+                    csr: alias::FFLAGS,
+                    uimm: imm as u32 as usize,
+                })
+            }
             "fsflagsi" => {
                 let imm = integer::pseudo::parse_imm_format(operands)?;
-                Csrrwi(Csri { rd: 0, csr: alias::FFLAGS, uimm: imm as u32 as usize })
-            },
-            
-            _ => return Err(format!("Unknown mnemonic: {}", mnemonic))
+                Csrrwi(Csri {
+                    rd: 0,
+                    csr: alias::FFLAGS,
+                    uimm: imm as u32 as usize,
+                })
+            }
+
+            _ => return Err(format!("Unknown mnemonic: {}", mnemonic)),
         };
 
         Ok(instruction)

@@ -6,7 +6,10 @@ pub fn parse_r_format(r: &str) -> Result<format::R, String> {
     let tokens: Vec<&str> = r.split(", ").collect();
 
     if tokens.len() != 3 {
-        return Err(format!("Expected format: 'rd, rs1, rs2', got {} instead", r));
+        return Err(format!(
+            "Expected format: 'rd, rs1, rs2', got {} instead",
+            r
+        ));
     }
 
     let rd = tokens[0];
@@ -24,7 +27,10 @@ pub fn parse_i_format(i: &str) -> Result<format::I, String> {
     let tokens: Vec<&str> = i.split(", ").collect();
 
     if tokens.len() != 3 {
-        return Err(format!("Expected format: 'rd, rs1, imm', got {} instead", i));
+        return Err(format!(
+            "Expected format: 'rd, rs1, imm', got {} instead",
+            i
+        ));
     }
 
     let rd = tokens[0];
@@ -35,14 +41,21 @@ pub fn parse_i_format(i: &str) -> Result<format::I, String> {
     let rs1 = parse_operand(rs1)?;
     let imm = parse_immediate(imm)?;
 
-    Ok(format::I { rd, rs1, imm12: imm })
+    Ok(format::I {
+        rd,
+        rs1,
+        imm12: imm,
+    })
 }
 
 pub fn parse_load_format(i: &str) -> Result<format::I, String> {
     let tokens: Vec<&str> = i.split(", ").collect();
 
     if tokens.len() != 2 {
-        return Err(format!("Expected format: 'rd, imm(rs1)', got {} instead", i));
+        return Err(format!(
+            "Expected format: 'rd, imm(rs1)', got {} instead",
+            i
+        ));
     }
 
     let rd = tokens[0].trim();
@@ -51,14 +64,21 @@ pub fn parse_load_format(i: &str) -> Result<format::I, String> {
     let rd = parse_operand(rd)?;
     let (imm, rs1) = parse_offset_addr_operand(imm_rs1)?;
 
-    Ok(format::I { rd, rs1, imm12: imm })
+    Ok(format::I {
+        rd,
+        rs1,
+        imm12: imm,
+    })
 }
 
 pub fn parse_s_format(s: &str) -> Result<format::S, String> {
     let tokens: Vec<&str> = s.split(", ").collect();
 
     if tokens.len() != 2 {
-        return Err(format!("Expected format: 'rs2, imm(rs1)', got {} instead", s));
+        return Err(format!(
+            "Expected format: 'rs2, imm(rs1)', got {} instead",
+            s
+        ));
     }
 
     let rs2 = tokens[0].trim();
@@ -67,14 +87,25 @@ pub fn parse_s_format(s: &str) -> Result<format::S, String> {
     let rs2 = parse_operand(rs2)?;
     let (imm, rs1) = parse_offset_addr_operand(imm_rs1)?;
 
-    Ok(format::S { rs1, rs2, imm12: imm })
+    Ok(format::S {
+        rs1,
+        rs2,
+        imm12: imm,
+    })
 }
 
-pub fn parse_branch_format(s: &str, labels: &HashMap<String, usize>, current_line: usize) -> Result<format::S, String> {
+pub fn parse_branch_format(
+    s: &str,
+    labels: &HashMap<String, usize>,
+    current_line: usize,
+) -> Result<format::S, String> {
     let tokens: Vec<&str> = s.split(", ").collect();
 
     if tokens.len() != 3 {
-        return Err(format!("Expected format: 'rs1, rs2, label', got {} instead", s));
+        return Err(format!(
+            "Expected format: 'rs1, rs2, label', got {} instead",
+            s
+        ));
     }
 
     let rs1 = tokens[0];
@@ -85,7 +116,11 @@ pub fn parse_branch_format(s: &str, labels: &HashMap<String, usize>, current_lin
     let rs2 = parse_operand(rs2)?;
     let label_addr = parse_label(label, labels, current_line)?;
 
-    Ok(format::S { rs1, rs2, imm12: label_addr })
+    Ok(format::S {
+        rs1,
+        rs2,
+        imm12: label_addr,
+    })
 }
 
 pub fn parse_u_format(u: &str) -> Result<format::U, String> {
@@ -106,7 +141,10 @@ pub fn parse_u_format(u: &str) -> Result<format::U, String> {
 
 pub fn parse_offset_addr_operand(op: &str) -> Result<(i32, usize), String> {
     let Some(operand_addr) = op.find('(') else {
-        return Err(format!("Expected format: 'imm(rs1)' for the address with offset, got {} instead", op));
+        return Err(format!(
+            "Expected format: 'imm(rs1)' for the address with offset, got {} instead",
+            op
+        ));
     };
 
     let (imm, reg) = op.split_at(operand_addr);
@@ -122,45 +160,48 @@ pub fn parse_addr_operand(op: &str) -> Result<usize, String> {
         let inner_op = &op[1..op.len() - 1];
         parse_operand(inner_op)
     } else {
-        Err(format!("Address operand {} is not wrapped in parentheses", op))
+        Err(format!(
+            "Address operand {} is not wrapped in parentheses",
+            op
+        ))
     }
 }
 
 pub fn parse_operand(op: &str) -> Result<usize, String> {
     let operand = match op {
-        "x0"  | "zero"        => 0,
-        "x1"  | "ra"          => 1,
-        "x2"  | "sp"          => 2,
-        "x3"  | "gp"          => 3,
-        "x4"  | "tp"          => 4,
-        "x5"  | "t0"          => 5,
-        "x6"  | "t1"          => 6,
-        "x7"  | "t2"          => 7,
-        "x8"  | "s0"   | "fp" => 8,
-        "x9"  | "s1"          => 9,
-        "x10" | "a0"          => 10,
-        "x11" | "a1"          => 11,
-        "x12" | "a2"          => 12,
-        "x13" | "a3"          => 13,
-        "x14" | "a4"          => 14,
-        "x15" | "a5"          => 15,
-        "x16" | "a6"          => 16,
-        "x17" | "a7"          => 17,
-        "x18" | "s2"          => 18,
-        "x19" | "s3"          => 19,
-        "x20" | "s4"          => 20,
-        "x21" | "s5"          => 21,
-        "x22" | "s6"          => 22,
-        "x23" | "s7"          => 23,
-        "x24" | "s8"          => 24,
-        "x25" | "s9"          => 25,
-        "x26" | "s10"         => 26,
-        "x27" | "s11"         => 27,
-        "x28" | "t3"          => 28,
-        "x29" | "t4"          => 29,
-        "x30" | "t5"          => 30,
-        "x31" | "t6"          => 31,
-        _                     => return Err(format!("Incorrect integer operand: {}", op))   
+        "x0" | "zero" => 0,
+        "x1" | "ra" => 1,
+        "x2" | "sp" => 2,
+        "x3" | "gp" => 3,
+        "x4" | "tp" => 4,
+        "x5" | "t0" => 5,
+        "x6" | "t1" => 6,
+        "x7" | "t2" => 7,
+        "x8" | "s0" | "fp" => 8,
+        "x9" | "s1" => 9,
+        "x10" | "a0" => 10,
+        "x11" | "a1" => 11,
+        "x12" | "a2" => 12,
+        "x13" | "a3" => 13,
+        "x14" | "a4" => 14,
+        "x15" | "a5" => 15,
+        "x16" | "a6" => 16,
+        "x17" | "a7" => 17,
+        "x18" | "s2" => 18,
+        "x19" | "s3" => 19,
+        "x20" | "s4" => 20,
+        "x21" | "s5" => 21,
+        "x22" | "s6" => 22,
+        "x23" | "s7" => 23,
+        "x24" | "s8" => 24,
+        "x25" | "s9" => 25,
+        "x26" | "s10" => 26,
+        "x27" | "s11" => 27,
+        "x28" | "t3" => 28,
+        "x29" | "t4" => 29,
+        "x30" | "t5" => 30,
+        "x31" | "t6" => 31,
+        _ => return Err(format!("Incorrect integer operand: {}", op)),
     };
 
     Ok(operand)
@@ -168,19 +209,26 @@ pub fn parse_operand(op: &str) -> Result<usize, String> {
 
 pub fn parse_immediate(imm: &str) -> Result<i32, String> {
     if imm.starts_with("0x") || imm.starts_with("0X") {
-        i32::from_str_radix(&imm[2..], 16).map_err(|e| format!("Error parsing hexadecimal immediate: {}", e))
+        i32::from_str_radix(&imm[2..], 16)
+            .map_err(|e| format!("Error parsing hexadecimal immediate: {}", e))
     } else if imm.starts_with("0o") || imm.starts_with("0O") {
-        i32::from_str_radix(&imm[2..], 8).map_err(|e| format!("Error parsing octal immediate: {}", e))
+        i32::from_str_radix(&imm[2..], 8)
+            .map_err(|e| format!("Error parsing octal immediate: {}", e))
     } else if imm.starts_with("0b") || imm.starts_with("0B") {
-        i32::from_str_radix(&imm[2..], 2).map_err(|e| format!("Error parsing binary immediate: {}", e))
+        i32::from_str_radix(&imm[2..], 2)
+            .map_err(|e| format!("Error parsing binary immediate: {}", e))
     } else {
-        imm.parse::<i32>().map_err(|e| format!("Error parsing immediate: {}", e))
+        imm.parse::<i32>()
+            .map_err(|e| format!("Error parsing immediate: {}", e))
     }
 }
 
-pub fn parse_label(label: &str, map: &HashMap<String, usize>, current_line: usize) -> Result<i32, String> {
-    map
-        .get(label)
+pub fn parse_label(
+    label: &str,
+    map: &HashMap<String, usize>,
+    current_line: usize,
+) -> Result<i32, String> {
+    map.get(label)
         .cloned()
         .map(|addr| addr.wrapping_sub(current_line).wrapping_sub(4) as i32)
         .ok_or(format!("Did not find label {}", label))
@@ -207,7 +255,10 @@ pub mod pseudo {
         let tokens: Vec<&str> = op_imm.split(", ").collect();
 
         if tokens.len() != 2 {
-            return Err(format!("Expected format: 'xreg, imm', got {} instead", op_imm));
+            return Err(format!(
+                "Expected format: 'xreg, imm', got {} instead",
+                op_imm
+            ));
         }
 
         let reg = tokens[0];
@@ -237,7 +288,10 @@ pub mod pseudo {
         let tokens: Vec<&str> = op_op.split(", ").collect();
 
         if tokens.len() != 2 {
-            return Err(format!("Expected format: 'xreg1, xreg2', got {} instead", op_op));
+            return Err(format!(
+                "Expected format: 'xreg1, xreg2', got {} instead",
+                op_op
+            ));
         }
 
         let reg1 = tokens[0];
@@ -249,7 +303,11 @@ pub mod pseudo {
         Ok((reg1, reg2))
     }
 
-    pub fn parse_label_format(label: &str, labels: &HashMap<String, usize>, current_line: usize) -> Result<i32, String> {
+    pub fn parse_label_format(
+        label: &str,
+        labels: &HashMap<String, usize>,
+        current_line: usize,
+    ) -> Result<i32, String> {
         let tokens: Vec<&str> = label.split(", ").collect();
 
         if tokens.len() != 1 {
@@ -263,11 +321,18 @@ pub mod pseudo {
         Ok(diff)
     }
 
-    pub fn parse_op_label_format(op_label: &str, labels: &HashMap<String, usize>, current_line: usize) -> Result<(usize, i32), String> {
+    pub fn parse_op_label_format(
+        op_label: &str,
+        labels: &HashMap<String, usize>,
+        current_line: usize,
+    ) -> Result<(usize, i32), String> {
         let tokens: Vec<&str> = op_label.split(", ").collect();
 
         if tokens.len() != 2 {
-            return Err(format!("Expected format: 'xreg, label', got {} instead", op_label));
+            return Err(format!(
+                "Expected format: 'xreg, label', got {} instead",
+                op_label
+            ));
         }
 
         let reg = tokens[0];
@@ -279,11 +344,18 @@ pub mod pseudo {
         Ok((reg, diff))
     }
 
-    pub fn parse_op_op_label_format(op_op_label: &str, labels: &HashMap<String, usize>, current_line: usize) -> Result<(usize, usize, i32), String> {
+    pub fn parse_op_op_label_format(
+        op_op_label: &str,
+        labels: &HashMap<String, usize>,
+        current_line: usize,
+    ) -> Result<(usize, usize, i32), String> {
         let tokens: Vec<&str> = op_op_label.split(", ").collect();
 
         if tokens.len() != 3 {
-            return Err(format!("Expected format: 'xreg1, xreg2, label', got {} instead", op_op_label));
+            return Err(format!(
+                "Expected format: 'xreg1, xreg2, label', got {} instead",
+                op_op_label
+            ));
         }
 
         let xreg1 = tokens[0];
