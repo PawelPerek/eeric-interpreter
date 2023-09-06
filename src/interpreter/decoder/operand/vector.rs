@@ -340,6 +340,26 @@ pub fn parse_opivv_format(opivv: &str) -> Result<format::Opivv, String> {
     Ok(format::Opivv { vd, vs2, vs1, vm })
 }
 
+pub fn parse_opivv_vmv_format(opivv_vmv: &str) -> Result<format::Opivv, String> {
+    let tokens: Vec<&str> = opivv_vmv.split(", ").collect();
+    if tokens.len() != 2 {
+        return Err(format!(
+            "Expected format: 'vd, vs1', got {} instead",
+            opivv_vmv
+        ));
+    }
+
+    let vd = parse_operand(tokens[0])?.as_register()?;
+    let vs1 = parse_operand(tokens[1])?.as_register()?;
+
+    Ok(format::Opivv {
+        vd,
+        vs2: 0,
+        vs1,
+        vm: false,
+    })
+}
+
 pub fn parse_opivx_format(opivx: &str) -> Result<format::Opivx, String> {
     let tokens: Vec<&str> = opivx.split(", ").collect();
     if tokens.len() != 3 && tokens.len() != 4 {
@@ -362,11 +382,31 @@ pub fn parse_opivx_format(opivx: &str) -> Result<format::Opivx, String> {
     Ok(format::Opivx { vd, vs2, rs1, vm })
 }
 
+pub fn parse_opivx_vmv_format(opivx_vmv: &str) -> Result<format::Opivx, String> {
+    let tokens: Vec<&str> = opivx_vmv.split(", ").collect();
+    if tokens.len() != 2 {
+        return Err(format!(
+            "Expected format: 'vd, rs1', got {} instead",
+            opivx_vmv
+        ));
+    }
+
+    let vd = parse_operand(tokens[0])?.as_register()?;
+    let rs1 = integer::parse_operand(tokens[1])?;
+
+    Ok(format::Opivx {
+        vd,
+        vs2: 0,
+        rs1,
+        vm: false,
+    })
+}
+
 pub fn parse_opivi_format(opivi: &str) -> Result<format::Opivi, String> {
     let tokens: Vec<&str> = opivi.split(", ").collect();
     if tokens.len() != 3 && tokens.len() != 4 {
         return Err(format!(
-            "Expected format: 'vd, vs2, rs1, [vm]', got {} instead",
+            "Expected format: 'vd, vs2, imm, [vm]', got {} instead",
             opivi
         ));
     }
@@ -386,6 +426,26 @@ pub fn parse_opivi_format(opivi: &str) -> Result<format::Opivi, String> {
         vs2,
         imm5: imm,
         vm,
+    })
+}
+
+pub fn parse_opivi_vmv_format(opivi_vmv: &str) -> Result<format::Opivi, String> {
+    let tokens: Vec<&str> = opivi_vmv.split(", ").collect();
+    if tokens.len() != 2 {
+        return Err(format!(
+            "Expected format: 'vd, imm', got {} instead",
+            opivi_vmv
+        ));
+    }
+
+    let vd = parse_operand(tokens[0])?.as_register()?;
+    let imm = integer::parse_immediate(tokens[1])?;
+
+    Ok(format::Opivi {
+        vd,
+        vs2: 0,
+        imm5: imm,
+        vm: false,
     })
 }
 

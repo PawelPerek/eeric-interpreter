@@ -46,7 +46,9 @@ impl Decoder {
         use vector::{
             parse_opfvf_fma_format as opfvf_fma, parse_opfvf_format as opfvf,
             parse_opfvv_fma_format as opfvv_fma, parse_opfvv_format as opfvv,
-            parse_opivi_format as opivi, parse_opivv_format as opivv, parse_opivx_format as opivx,
+            parse_opivi_format as opivi, parse_opivi_vmv_format as opivi_vmv,
+            parse_opivv_format as opivv, parse_opivv_vmv_format as opivv_vmv,
+            parse_opivx_format as opivx, parse_opivx_vmv_format as opivx_vmv,
             parse_opmvv_fma_format as opmvv_fma, parse_opmvv_format as opmvv,
             parse_opmvx_fma_format as opmvx_fma, parse_opmvx_format as opmvx,
             parse_vfunary0_format as vfunary0, parse_vfunary1_format as vfunary1,
@@ -1814,9 +1816,9 @@ impl Decoder {
             "vmerge.vxm" => Vmergevxm(opivx(operands)?),
             "vmerge.vim" => Vmergevim(opivi(operands)?),
 
-            "vmv.v.v" => Vmvvv(opivv(operands)?),
-            "vmv.v.x" => Vmvvx(opivx(operands)?),
-            "vmv.v.i" => Vmvvi(opivi(operands)?),
+            "vmv.v.v" => Vmvvv(opivv_vmv(operands)?),
+            "vmv.v.x" => Vmvvx(opivx_vmv(operands)?),
+            "vmv.v.i" => Vmvvi(opivi_vmv(operands)?),
 
             "vmseq.vv" => Vmseqvv(opivv(operands)?),
             "vmseq.vx" => Vmseqvx(opivx(operands)?),
