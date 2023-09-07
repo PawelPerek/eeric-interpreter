@@ -149,7 +149,7 @@ pub fn parse_offset_addr_operand(op: &str) -> Result<(i32, usize), String> {
 
     let (imm, reg) = op.split_at(operand_addr);
 
-    let imm = parse_immediate(imm)?;
+    let imm = parse_optional_immediate(imm)?;
     let reg = parse_addr_operand(reg)?;
 
     Ok((imm, reg))
@@ -220,6 +220,14 @@ pub fn parse_immediate(imm: &str) -> Result<i32, String> {
     } else {
         imm.parse::<i32>()
             .map_err(|e| format!("Error parsing immediate: {}", e))
+    }
+}
+
+pub fn parse_optional_immediate(imm: &str) -> Result<i32, String> {
+    if imm.is_empty() {
+        Ok(0)
+    } else {
+        parse_immediate(imm)
     }
 }
 
