@@ -2565,7 +2565,7 @@ impl Decoder {
             "fscsr" => {
                 let (rd, rs1) = integer::pseudo::parse_op_op_format(operands)?;
                 Csrrw(Csrr {
-                    rd: rd,
+                    rd,
                     csr: alias::FCSR,
                     rs1,
                 })
