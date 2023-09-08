@@ -9,34 +9,29 @@ pub struct Interpreter;
 
 pub struct CompilationResult {
     pub instructions: Vec<Instruction>,
-    pub instructions_addresses: HashMap<usize, usize>,
+    pub instructions_addresses: Vec<usize>
 }
 
 impl Interpreter {
     pub fn compile(program: String) -> Result<CompilationResult, HashMap<usize, String>> {
         let mut labels = HashMap::new();
         let mut instructions = Vec::new();
-        let mut instructions_addresses = HashMap::new();
-        let mut line_address = 0;
-        let mut raw_line_address = 0;
+        let mut instructions_addresses = Vec::new();
+        let mut program_line_address = 0;
 
         let mut instruction_lines = Vec::new();
 
-        instructions_addresses.insert(0, 0);
-
-        for line in program.lines() {
+        for (line_address, line) in program.lines().enumerate() {
             let class = Decoder::classify(line);
-            raw_line_address += 4;
 
             match class {
                 LineClassification::Label(label) => {
-                    labels.insert(label, line_address);
+                    labels.insert(label, program_line_address);
                 }
                 LineClassification::Instruction(instruction) => {
+                    program_line_address += 4;
                     instruction_lines.push(instruction);
-                    line_address += 4;
-
-                    instructions_addresses.insert(line_address, raw_line_address);
+                    instructions_addresses.push(line_address);
                 }
                 LineClassification::Empty => {}
             }
@@ -63,5 +58,41 @@ impl Interpreter {
         } else {
             Err(errors)
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn instruction_map_calculation() {
+        let input = r#"
+        addi x1, x0, 123
+        loop:
+        inner_loop:
+            add x1, x1, x1
+            bnez x1, loop
+        "#.trim_start();
+
+        let compilation_result = Interpreter::compile(input.to_owned()).unwrap();
+        
+        assert_eq!(
+            compilation_result.instructions, 
+            vec![
+                Instruction::Addi(format::I { rd: 1, rs1: 0, imm12: 123 }),
+                Instruction::Add(format::R { rd: 1, rs1: 1, rs2: 1 }),
+                Instruction::Bne(format::S { rs1: 1, rs2: 0, imm12: -8 }),   
+            ]
+        );
+
+        assert_eq!(
+            compilation_result.instructions_addresses, 
+            vec![
+                0, // addi x1, x0, 123
+                3, // add x1, x1, x1
+                4  // bnez x1, loop
+            ]
+        );
     }
 }
