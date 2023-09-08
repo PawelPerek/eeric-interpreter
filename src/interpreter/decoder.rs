@@ -63,7 +63,7 @@ impl Decoder {
             parse_vxunary0_format as vxunary0,
         };
 
-        let instruction = match mnemonic {
+        let instruction = match Self::rename(mnemonic) {
             "add" => Add(r(operands)?),
             "addw" => Addw(r(operands)?),
             "sub" => Sub(r(operands)?),
@@ -2665,10 +2665,52 @@ impl Decoder {
         Ok(instruction)
     }
 
+    fn rename(old: &str) -> &str {
+        match old {
+            "vle1.v" => "vlm.v",
+            "vse1.v" => "vsm.v",
+            "vfredsum.vs" => "vfredusum.vs",
+            "vfwredsum.vs" => "vfwredusum.vs",
+            "vmandnot.mm" => "vmandn.mm",
+            "vmornot.mm" => "vmorn.mm",
+            "vpopc.m" => "vcpop.m",
+            "vfrsqrte7.v" => "vfrsqrt7.v",
+            "vfrece7.v" => "vfrec7.v",
+            "vmcpy.m" => "vmmv.m",
+            _ => old,
+        }
+    }
+
     fn split_instruction(instruction_line: &str) -> (&str, &str) {
         let mut lane = instruction_line.splitn(2, char::is_whitespace);
         let mnemonic = lane.next().unwrap_or_default().trim();
         let operands = lane.next().unwrap_or_default().trim();
         (mnemonic, operands)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn rename_correctly() {
+        let old_mnemonics = [
+            "vle1.v",
+            "vse1.v",
+            "vfredsum.vs",
+            "vfwredsum.vs",
+            "vmandnot.mm",
+            "vmornot.mm",
+            "vpopc.m",
+            "vfrsqrte7.v",
+            "vfrece7.v",
+            "vmcpy.m",
+        ];
+
+        old_mnemonics
+            .map(|mnemonic| (mnemonic, Decoder::rename(mnemonic)))
+            .iter()
+            .for_each(|(old, new)| assert_ne!(old, new));
     }
 }
