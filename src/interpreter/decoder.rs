@@ -2488,7 +2488,7 @@ impl Decoder {
                     Box::new(Jalr(I {
                         rd: 1,
                         rs1: 1,
-                        imm12: diff & 0xfff,
+                        imm12: (diff - 4) & 0xfff,
                     })),
                 )
             }
@@ -2502,7 +2502,7 @@ impl Decoder {
                     Box::new(Jalr(I {
                         rd: 0,
                         rs1: 6,
-                        imm12: diff & 0xfff,
+                        imm12: (diff - 4) & 0xfff,
                     })),
                 )
             }
