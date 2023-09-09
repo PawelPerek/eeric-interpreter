@@ -12,13 +12,9 @@ pub fn parse_csrr_format(csrr: &str) -> Result<format::Csrr, String> {
         ));
     }
 
-    let rd = tokens[0];
-    let csr = tokens[1];
-    let rs1 = tokens[1];
-
-    let rd = integer::parse_operand(rd)?;
-    let csr = parse_operand(csr)?;
-    let rs1 = integer::parse_operand(rs1)?;
+    let rd = integer::parse_operand(tokens[0])?;
+    let csr = parse_operand(tokens[1])?;
+    let rs1 = integer::parse_operand(tokens[2])?;
 
     Ok(format::Csrr { rd, csr, rs1 })
 }
@@ -33,13 +29,9 @@ pub fn parse_csri_format(csri: &str) -> Result<format::Csri, String> {
         ));
     }
 
-    let rd = tokens[0];
-    let csr = tokens[1];
-    let imm = tokens[2];
-
-    let rd = integer::parse_operand(rd)?;
-    let csr = parse_operand(csr)?;
-    let uimm = integer::parse_immediate(imm)?;
+    let rd = integer::parse_operand(tokens[0])?;
+    let csr = parse_operand(tokens[1])?;
+    let uimm = integer::parse_immediate(tokens[2])?;
 
     Ok(format::Csri {
         rd,
@@ -86,11 +78,8 @@ pub mod pseudo {
             ));
         }
 
-        let reg = tokens[0];
-        let csr = tokens[1];
-
-        let reg = super::integer::parse_operand(reg)?;
-        let csr = super::parse_operand(csr)?;
+        let reg = super::integer::parse_operand(tokens[0])?;
+        let csr = super::parse_operand(tokens[1])?;
 
         Ok((reg, csr))
     }
@@ -105,11 +94,8 @@ pub mod pseudo {
             ));
         }
 
-        let csr = tokens[0];
-        let reg = tokens[1];
-
-        let csr = super::parse_operand(csr)?;
-        let reg = super::integer::parse_operand(reg)?;
+        let csr = super::parse_operand(tokens[0])?;
+        let reg = super::integer::parse_operand(tokens[1])?;
 
         Ok((csr, reg))
     }

@@ -10,15 +10,10 @@ pub fn parse_r4_format(r4: &str) -> Result<format::R4, String> {
         ));
     }
 
-    let rd = tokens[0];
-    let rs1 = tokens[1];
-    let rs2 = tokens[2];
-    let rs3 = tokens[3];
-
-    let rd = parse_operand(rd)?;
-    let rs1 = parse_operand(rs1)?;
-    let rs2 = parse_operand(rs2)?;
-    let rs3 = parse_operand(rs3)?;
+    let rd = parse_operand(tokens[0])?;
+    let rs1 = parse_operand(tokens[1])?;
+    let rs2 = parse_operand(tokens[2])?;
+    let rs3 = parse_operand(tokens[3])?;
 
     Ok(format::R4 { rd, rs1, rs2, rs3 })
 }
@@ -72,11 +67,8 @@ pub mod pseudo {
             ));
         }
 
-        let reg1 = tokens[0];
-        let reg2 = tokens[1];
-
-        let reg1 = super::parse_operand(reg1)?;
-        let reg2 = super::parse_operand(reg2)?;
+        let reg1 = super::parse_operand(tokens[0])?;
+        let reg2 = super::parse_operand(tokens[1])?;
 
         Ok((reg1, reg2))
     }

@@ -12,13 +12,9 @@ pub fn parse_r_format(r: &str) -> Result<format::R, String> {
         ));
     }
 
-    let rd = tokens[0];
-    let rs1 = tokens[1];
-    let rs2 = tokens[2];
-
-    let rd = parse_operand(rd)?;
-    let rs1 = parse_operand(rs1)?;
-    let rs2 = parse_operand(rs2)?;
+    let rd = parse_operand(tokens[0])?;
+    let rs1 = parse_operand(tokens[1])?;
+    let rs2 = parse_operand(tokens[2])?;
 
     Ok(format::R { rd, rs1, rs2 })
 }
@@ -33,13 +29,9 @@ pub fn parse_i_format(i: &str) -> Result<format::I, String> {
         ));
     }
 
-    let rd = tokens[0];
-    let rs1 = tokens[1];
-    let imm = tokens[2];
-
-    let rd = parse_operand(rd)?;
-    let rs1 = parse_operand(rs1)?;
-    let imm = parse_immediate(imm)?;
+    let rd = parse_operand(tokens[0])?;
+    let rs1 = parse_operand(tokens[1])?;
+    let imm = parse_immediate(tokens[2])?;
 
     Ok(format::I {
         rd,
@@ -58,11 +50,8 @@ pub fn parse_load_format(i: &str) -> Result<format::I, String> {
         ));
     }
 
-    let rd = tokens[0].trim();
-    let imm_rs1 = tokens[1].trim();
-
-    let rd = parse_operand(rd)?;
-    let (imm, rs1) = parse_offset_addr_operand(imm_rs1)?;
+    let rd = parse_operand(tokens[0].trim())?;
+    let (imm, rs1) = parse_offset_addr_operand(tokens[1].trim())?;
 
     Ok(format::I {
         rd,
@@ -81,11 +70,8 @@ pub fn parse_s_format(s: &str) -> Result<format::S, String> {
         ));
     }
 
-    let rs2 = tokens[0].trim();
-    let imm_rs1 = tokens[1].trim();
-
-    let rs2 = parse_operand(rs2)?;
-    let (imm, rs1) = parse_offset_addr_operand(imm_rs1)?;
+    let rs2 = parse_operand(tokens[0].trim())?;
+    let (imm, rs1) = parse_offset_addr_operand(tokens[1].trim())?;
 
     Ok(format::S {
         rs1,
@@ -108,13 +94,9 @@ pub fn parse_branch_format(
         ));
     }
 
-    let rs1 = tokens[0];
-    let rs2 = tokens[1];
-    let label = tokens[2];
-
-    let rs1 = parse_operand(rs1)?;
-    let rs2 = parse_operand(rs2)?;
-    let label_addr = parse_label(label, labels, current_line)?;
+    let rs1 = parse_operand(tokens[0])?;
+    let rs2 = parse_operand(tokens[1])?;
+    let label_addr = parse_label(tokens[2], labels, current_line)?;
 
     Ok(format::S {
         rs1,
@@ -130,11 +112,8 @@ pub fn parse_u_format(u: &str) -> Result<format::U, String> {
         return Err(format!("Expected format: 'rd, imm', got {} instead", u));
     }
 
-    let rd = tokens[0];
-    let imm = tokens[1];
-
-    let rd = parse_operand(rd)?;
-    let imm = parse_immediate(imm)?;
+    let rd = parse_operand(tokens[0])?;
+    let imm = parse_immediate(tokens[1])?;
 
     Ok(format::U { rd, imm20: imm })
 }
@@ -252,9 +231,7 @@ pub mod pseudo {
             return Err(format!("Expected format: 'imm', got {} instead", imm));
         }
 
-        let imm = tokens[0];
-
-        let imm = super::parse_immediate(imm)?;
+        let imm = super::parse_immediate(tokens[0])?;
 
         Ok(imm)
     }
@@ -269,11 +246,8 @@ pub mod pseudo {
             ));
         }
 
-        let reg = tokens[0];
-        let imm = tokens[1];
-
-        let reg = super::parse_operand(reg)?;
-        let imm = super::parse_immediate(imm)?;
+        let reg = super::parse_operand(tokens[0])?;
+        let imm = super::parse_immediate(tokens[1])?;
 
         Ok((reg, imm))
     }
@@ -285,9 +259,7 @@ pub mod pseudo {
             return Err(format!("Expected format: 'xreg', got {} instead", op));
         }
 
-        let xreg = tokens[0];
-
-        let xreg = super::parse_operand(xreg)?;
+        let xreg = super::parse_operand(tokens[0])?;
 
         Ok(xreg)
     }
@@ -302,11 +274,8 @@ pub mod pseudo {
             ));
         }
 
-        let reg1 = tokens[0];
-        let reg2 = tokens[1];
-
-        let reg1 = super::parse_operand(reg1)?;
-        let reg2 = super::parse_operand(reg2)?;
+        let reg1 = super::parse_operand(tokens[0])?;
+        let reg2 = super::parse_operand(tokens[1])?;
 
         Ok((reg1, reg2))
     }
@@ -322,9 +291,7 @@ pub mod pseudo {
             return Err(format!("Expected format: 'label', got {} instead", label));
         }
 
-        let label = tokens[0];
-
-        let diff = super::parse_label(label, labels, current_line)?;
+        let diff = super::parse_label(tokens[0], labels, current_line)?;
 
         Ok(diff)
     }
@@ -343,11 +310,8 @@ pub mod pseudo {
             ));
         }
 
-        let reg = tokens[0];
-        let label = tokens[1];
-
-        let reg = super::parse_operand(reg)?;
-        let diff = super::parse_label(label, labels, current_line)?;
+        let reg = super::parse_operand(tokens[0])?;
+        let diff = super::parse_label(tokens[1], labels, current_line)?;
 
         Ok((reg, diff))
     }
@@ -366,13 +330,9 @@ pub mod pseudo {
             ));
         }
 
-        let xreg1 = tokens[0];
-        let xreg2 = tokens[1];
-        let label = tokens[2];
-
-        let xreg1 = super::parse_operand(xreg1)?;
-        let xreg2 = super::parse_operand(xreg2)?;
-        let diff = super::parse_label(label, labels, current_line)?;
+        let xreg1 = super::parse_operand(tokens[0])?;
+        let xreg2 = super::parse_operand(tokens[1])?;
+        let diff = super::parse_label(tokens[2], labels, current_line)?;
 
         Ok((xreg1, xreg2, diff))
     }

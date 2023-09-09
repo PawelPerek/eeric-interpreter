@@ -340,6 +340,41 @@ pub fn parse_opivv_format(opivv: &str) -> Result<format::Opivv, String> {
     Ok(format::Opivv { vd, vs2, vs1, vm })
 }
 
+pub fn parse_opivv_v0_format(opivv: &str) -> Result<format::Opivv, String> {
+    let tokens: Vec<&str> = opivv.split(", ").collect();
+    if tokens.len() != 4 {
+        return Err(format!(
+            "Expected format: 'vd, vs2, vs1, v0', got {} instead",
+            opivv
+        ));
+    }
+
+    let vd = parse_operand(tokens[0])?.as_register()?;
+    let vs2 = parse_operand(tokens[1])?.as_register()?;
+    let vs1 = parse_operand(tokens[2])?.as_register()?;
+    if parse_operand(tokens[3])?.as_register()? != 0 {
+        return Err("Expected last operand to be v0".to_owned());
+    }
+
+    Ok(format::Opivv { vd, vs2, vs1, vm: true })
+}
+
+pub fn parse_opivv_maskless_format(opivv: &str) -> Result<format::Opivv, String> {
+    let tokens: Vec<&str> = opivv.split(", ").collect();
+    if tokens.len() != 3 {
+        return Err(format!(
+            "Expected format: 'vd, vs2, vs1', got {} instead",
+            opivv
+        ));
+    }
+
+    let vd = parse_operand(tokens[0])?.as_register()?;
+    let vs2 = parse_operand(tokens[1])?.as_register()?;
+    let vs1 = parse_operand(tokens[2])?.as_register()?;
+
+    Ok(format::Opivv { vd, vs2, vs1, vm: true })
+}
+
 pub fn parse_opivv_vmv_format(opivv_vmv: &str) -> Result<format::Opivv, String> {
     let tokens: Vec<&str> = opivv_vmv.split(", ").collect();
     if tokens.len() != 2 {
@@ -380,6 +415,41 @@ pub fn parse_opivx_format(opivx: &str) -> Result<format::Opivx, String> {
     };
 
     Ok(format::Opivx { vd, vs2, rs1, vm })
+}
+
+pub fn parse_opivx_v0_format(opivx: &str) -> Result<format::Opivx, String> {
+    let tokens: Vec<&str> = opivx.split(", ").collect();
+    if tokens.len() != 4 {
+        return Err(format!(
+            "Expected format: 'vd, vs2, rs1, v0', got {} instead",
+            opivx
+        ));
+    }
+
+    let vd = parse_operand(tokens[0])?.as_register()?;
+    let vs2 = parse_operand(tokens[1])?.as_register()?;
+    let rs1 = integer::parse_operand(tokens[2])?;
+    if parse_operand(tokens[3])?.as_register()? != 0 {
+        return Err("Expected last operand to be v0".to_owned());
+    }
+
+    Ok(format::Opivx { vd, vs2, rs1, vm: false })
+}
+
+pub fn parse_opivx_maskless_format(opivx: &str) -> Result<format::Opivx, String> {
+    let tokens: Vec<&str> = opivx.split(", ").collect();
+    if tokens.len() != 3 {
+        return Err(format!(
+            "Expected format: 'vd, vs2, rs1', got {} instead",
+            opivx
+        ));
+    }
+
+    let vd = parse_operand(tokens[0])?.as_register()?;
+    let vs2 = parse_operand(tokens[1])?.as_register()?;
+    let rs1 = integer::parse_operand(tokens[2])?;
+
+    Ok(format::Opivx { vd, vs2, rs1, vm: false })
 }
 
 pub fn parse_opivx_vmv_format(opivx_vmv: &str) -> Result<format::Opivx, String> {
@@ -429,6 +499,51 @@ pub fn parse_opivi_format(opivi: &str) -> Result<format::Opivi, String> {
     })
 }
 
+pub fn parse_opivi_v0_format(opivi: &str) -> Result<format::Opivi, String> {
+    let tokens: Vec<&str> = opivi.split(", ").collect();
+    if tokens.len() != 4 {
+        return Err(format!(
+            "Expected format: 'vd, vs2, imm, v0', got {} instead",
+            opivi
+        ));
+    }
+
+    let vd = parse_operand(tokens[0])?.as_register()?;
+    let vs2 = parse_operand(tokens[1])?.as_register()?;
+    let imm = integer::parse_immediate(tokens[2])?;
+    if parse_operand(tokens[3])?.as_register()? != 0 {
+        return Err("Expected last operand to be v0".to_owned());
+    }
+
+    Ok(format::Opivi {
+        vd,
+        vs2,
+        imm5: imm,
+        vm: false,
+    })
+}
+
+pub fn parse_opivi_maskless_format(opivi: &str) -> Result<format::Opivi, String> {
+    let tokens: Vec<&str> = opivi.split(", ").collect();
+    if tokens.len() != 3 {
+        return Err(format!(
+            "Expected format: 'vd, vs2, imm', got {} instead",
+            opivi
+        ));
+    }
+
+    let vd = parse_operand(tokens[0])?.as_register()?;
+    let vs2 = parse_operand(tokens[1])?.as_register()?;
+    let imm = integer::parse_immediate(tokens[2])?;
+
+    Ok(format::Opivi {
+        vd,
+        vs2,
+        imm5: imm,
+        vm: false,
+    })
+}
+
 pub fn parse_opivi_vmv_format(opivi_vmv: &str) -> Result<format::Opivi, String> {
     let tokens: Vec<&str> = opivi_vmv.split(", ").collect();
     if tokens.len() != 2 {
@@ -473,6 +588,27 @@ pub fn parse_opmvv_format(opmvv: &str) -> Result<format::Opmvv, String> {
         vs2,
         vs1,
         vm,
+    })
+}
+
+pub fn parse_opmvv_maskless_format(opmvv: &str) -> Result<format::Opmvv, String> {
+    let tokens: Vec<&str> = opmvv.split(", ").collect();
+    if tokens.len() != 3 {
+        return Err(format!(
+            "Expected format: 'vd, vs2, vs1', got {} instead",
+            opmvv
+        ));
+    }
+
+    let vd = parse_operand(tokens[0])?.as_register()?;
+    let vs2 = parse_operand(tokens[1])?.as_register()?;
+    let vs1 = parse_operand(tokens[2])?.as_register()?;
+
+    Ok(format::Opmvv {
+        dest: vd,
+        vs2,
+        vs1,
+        vm: false,
     })
 }
 
@@ -954,4 +1090,168 @@ fn parse_operand(op: &str) -> Result<VectorOperand, String> {
     };
 
     Ok(VectorOperand::Register(operand))
+}
+
+pub mod pseudo {
+    pub fn parse_op_format(op: &str) -> Result<usize, String> {
+        let tokens: Vec<&str> = op.split(", ").collect();
+
+        if tokens.len() != 1  {
+            return Err(format!(
+                "Expected format: 'vreg', got {} instead",
+                op
+            ));
+        }
+
+        let reg1 = super::parse_operand(tokens[0])?.as_register()?;
+
+        Ok(reg1)
+    }
+
+
+    pub fn parse_op_op_format(op_op: &str) -> Result<(usize, usize), String> {
+        let tokens: Vec<&str> = op_op.split(", ").collect();
+
+        if tokens.len() != 2  {
+            return Err(format!(
+                "Expected format: 'vreg1, vreg2', got {} instead",
+                op_op
+            ));
+        }
+
+        let reg1 = super::parse_operand(tokens[0])?.as_register()?;
+        let reg2 = super::parse_operand(tokens[1])?.as_register()?;
+
+        Ok((reg1, reg2))
+    }
+
+    pub fn parse_op_op_mask_format(op_op_mask: &str) -> Result<(usize, usize, bool), String> {
+        let tokens: Vec<&str> = op_op_mask.split(", ").collect();
+
+        if tokens.len() != 2 && tokens.len() != 3  {
+            return Err(format!(
+                "Expected format: 'vreg1, vreg2, [vm]', got {} instead",
+                op_op_mask
+            ));
+        }
+
+        let reg1 = super::parse_operand(tokens[0])?.as_register()?;
+        let reg2 = super::parse_operand(tokens[1])?.as_register()?;
+
+        let vm = if tokens.len() == 3 {
+            super::parse_operand(tokens[2])?.as_mask()?;
+            true
+        } else {
+            false
+        };
+
+        Ok((reg1, reg2, vm))
+    }
+
+    pub fn parse_op_op_xreg_format(op_op_xreg: &str) -> Result<(usize, usize, usize), String> {
+        let tokens: Vec<&str> = op_op_xreg.split(", ").collect();
+
+        if tokens.len() != 3  {
+            return Err(format!(
+                "Expected format: 'vreg1, vreg2, xreg', got {} instead",
+                op_op_xreg
+            ));
+        }
+
+        let reg1 = super::parse_operand(tokens[0])?.as_register()?;
+        let reg2 = super::parse_operand(tokens[1])?.as_register()?;
+        let reg3 = super::integer::parse_operand(tokens[2])?;
+
+        Ok((reg1, reg2, reg3))
+    }
+
+    pub fn parse_op_op_xreg_mask_vd_nonzero_format(op_op_xreg_mask_vd_nonzero: &str) -> Result<(usize, usize, usize), String> {
+        let tokens: Vec<&str> = op_op_xreg_mask_vd_nonzero.split(", ").collect();
+
+        if tokens.len() != 4  {
+            return Err(format!(
+                "Expected format: 'vreg1, vreg2, xreg, v0.t', got {} instead",
+                op_op_xreg_mask_vd_nonzero
+            ));
+        }
+
+        let reg1 = super::parse_operand(tokens[0])?.as_register()?;
+        if reg1 == 0 {
+            return Err("Expected vd != v0".to_owned());
+        }
+
+
+        let reg2 = super::parse_operand(tokens[1])?.as_register()?;
+        let reg3 = super::integer::parse_operand(tokens[2])?;
+        super::parse_operand(tokens[3])?.as_mask()?;
+
+        Ok((reg1, reg2, reg3))
+    }
+
+    pub fn parse_op_op_xreg_mask_temp_format(op_op_xreg_mask: &str) -> Result<(usize, usize, usize, usize), String> {
+        let tokens: Vec<&str> = op_op_xreg_mask.split(", ").collect();
+
+        if tokens.len() != 5  {
+            return Err(format!(
+                "Expected format: 'vreg1, vreg2, xreg, v0.t, vt', got {} instead",
+                op_op_xreg_mask
+            ));
+        }
+
+        let reg1 = super::parse_operand(tokens[0])?.as_register()?;
+        let reg2 = super::parse_operand(tokens[1])?.as_register()?;
+        let xreg = super::integer::parse_operand(tokens[2])?;
+        super::parse_operand(tokens[3])?.as_mask()?;
+        let reg3 = super::parse_operand(tokens[4])?.as_register()?;
+
+        Ok((reg1, reg2, xreg, reg3))
+    }
+
+    pub fn parse_op_op_op_mask_format(op_op_op_mask: &str) -> Result<(usize, usize, usize, bool), String> {
+        let tokens: Vec<&str> = op_op_op_mask.split(", ").collect();
+
+        if tokens.len() != 3 && tokens.len() != 4  {
+            return Err(format!(
+                "Expected format: 'vreg1, vreg2, vreg3, [vm]', got {} instead",
+                op_op_op_mask
+            ));
+        }
+
+        let reg1 = super::parse_operand(tokens[0])?.as_register()?;
+        let reg2 = super::parse_operand(tokens[1])?.as_register()?;
+        let reg3 = super::parse_operand(tokens[2])?.as_register()?;
+
+        let vm = if tokens.len() == 4 {
+            super::parse_operand(tokens[3])?.as_mask()?;
+            true
+        } else {
+            false
+        };
+
+        Ok((reg1, reg2, reg3, vm))
+    }
+
+    pub fn parse_op_op_imm_mask_format(op_op_imm_mask: &str) -> Result<(usize, usize, i32, bool), String> {
+        let tokens: Vec<&str> = op_op_imm_mask.split(", ").collect();
+
+        if tokens.len() != 3 && tokens.len() != 4  {
+            return Err(format!(
+                "Expected format: 'vreg1, vreg2, imm, [vm]', got {} instead",
+                op_op_imm_mask
+            ));
+        }
+
+        let reg1 = super::parse_operand(tokens[0])?.as_register()?;
+        let reg2 = super::parse_operand(tokens[1])?.as_register()?;
+        let reg3 = super::integer::parse_immediate(tokens[2])?;
+
+        let vm = if tokens.len() == 4 {
+            super::parse_operand(tokens[3])?.as_mask()?;
+            true
+        } else {
+            false
+        };
+
+        Ok((reg1, reg2, reg3, vm))
+    }
 }

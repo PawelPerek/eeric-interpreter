@@ -46,10 +46,11 @@ impl Decoder {
         use vector::{
             parse_opfvf_fma_format as opfvf_fma, parse_opfvf_format as opfvf,
             parse_opfvv_fma_format as opfvv_fma, parse_opfvv_format as opfvv,
-            parse_opivi_format as opivi, parse_opivi_vmv_format as opivi_vmv,
-            parse_opivv_format as opivv, parse_opivv_vmv_format as opivv_vmv,
-            parse_opivx_format as opivx, parse_opivx_vmv_format as opivx_vmv,
+            parse_opivi_format as opivi, parse_opivi_vmv_format as opivi_vmv, parse_opivi_v0_format as opivi_v0, parse_opivi_maskless_format as opivi_maskless,
+            parse_opivv_format as opivv, parse_opivv_vmv_format as opivv_vmv, parse_opivv_v0_format as opivv_v0, parse_opivv_maskless_format as opivv_maskless,
+            parse_opivx_format as opivx, parse_opivx_vmv_format as opivx_vmv, parse_opivx_v0_format as opivx_v0, parse_opivx_maskless_format as opivx_maskless,
             parse_opmvv_fma_format as opmvv_fma, parse_opmvv_format as opmvv,
+            parse_opmvv_maskless_format as opmvv_maskless,
             parse_opmvx_fma_format as opmvx_fma, parse_opmvx_format as opmvx,
             parse_vfunary0_format as vfunary0, parse_vfunary1_format as vfunary1,
             parse_vl_format as vl, parse_vlm_format as vlm, parse_vlr_format as vlr,
@@ -1818,16 +1819,16 @@ impl Decoder {
             "vslidedown.vx" => Vslidedownvx(opivx(operands)?),
             "vslidedown.vi" => Vslidedownvi(opivi(operands)?),
 
-            "vadc.vvm" => Vadcvvm(opivv(operands)?),
-            "vadc.vxm" => Vadcvxm(opivx(operands)?),
-            "vadc.vim" => Vadcvim(opivi(operands)?),
+            "vadc.vvm" => Vadcvvm(opivv_v0(operands)?),
+            "vadc.vxm" => Vadcvxm(opivx_v0(operands)?),
+            "vadc.vim" => Vadcvim(opivi_v0(operands)?),
 
-            "vmadc.vvm" => Vmadcvvm(opivv(operands)?),
-            "vmadc.vxm" => Vmadcvxm(opivx(operands)?),
-            "vmadc.vim" => Vmadcvim(opivi(operands)?),
-            "vmadc.vv" => Vmadcvv(opivv(operands)?),
-            "vmadc.vx" => Vmadcvx(opivx(operands)?),
-            "vmadc.vi" => Vmadcvi(opivi(operands)?),
+            "vmadc.vvm" => Vmadcvvm(opivv_v0(operands)?),
+            "vmadc.vxm" => Vmadcvxm(opivx_v0(operands)?),
+            "vmadc.vim" => Vmadcvim(opivi_v0(operands)?),
+            "vmadc.vv" => Vmadcvv(opivv_maskless(operands)?),
+            "vmadc.vx" => Vmadcvx(opivx_maskless(operands)?),
+            "vmadc.vi" => Vmadcvi(opivi_maskless(operands)?),
 
             "vsbc.vvm" => Vsbcvvm(opivv(operands)?),
             "vsbc.vxm" => Vsbcvxm(opivx(operands)?),
@@ -1977,16 +1978,16 @@ impl Decoder {
             "viota.m" => Viotam(vmunary0(operands)?),
             "vid.v" => Vidv(vidv(operands)?),
 
-            "vcompress.vm" => Vcompressvm(opmvv(operands)?),
+            "vcompress.vm" => Vcompressvm(opmvv_maskless(operands)?),
 
-            "vmandn.mm" => Vmandnmm(opmvv(operands)?),
-            "vmand.mm" => Vmandmm(opmvv(operands)?),
-            "vmor.mm" => Vmormm(opmvv(operands)?),
-            "vmxor.mm" => Vmxormm(opmvv(operands)?),
-            "vmorn.mm" => Vmornmm(opmvv(operands)?),
-            "vmnand.mm" => Vmnandmm(opmvv(operands)?),
-            "vmnor.mm" => Vmnormm(opmvv(operands)?),
-            "vmxnor.mm" => Vmxnormm(opmvv(operands)?),
+            "vmandn.mm" => Vmandnmm(opmvv_maskless(operands)?),
+            "vmand.mm" => Vmandmm(opmvv_maskless(operands)?),
+            "vmor.mm" => Vmormm(opmvv_maskless(operands)?),
+            "vmxor.mm" => Vmxormm(opmvv_maskless(operands)?),
+            "vmorn.mm" => Vmornmm(opmvv_maskless(operands)?),
+            "vmnand.mm" => Vmnandmm(opmvv_maskless(operands)?),
+            "vmnor.mm" => Vmnormm(opmvv_maskless(operands)?),
+            "vmxnor.mm" => Vmxnormm(opmvv_maskless(operands)?),
 
             "vdivu.vv" => Vdivuvv(opmvv(operands)?),
             "vdivu.vx" => Vdivuvx(opmvx(operands)?),
@@ -2674,6 +2675,159 @@ impl Decoder {
                     }
                 }
             }
+
+            "vneg.v" => {
+                let (vd, vs2, vm) = vector::pseudo::parse_op_op_mask_format(operands)?;
+                Vrsubvx(Opivx { vd, rs1: alias::ZERO, vs2, vm })
+            }
+            "vwcvt.x.x.v" => {
+                let (vd, vs2, vm) = vector::pseudo::parse_op_op_mask_format(operands)?;
+                Vwaddvx(Opmvx { dest: vd, rs1: alias::ZERO, vs2, vm })
+            }
+            "vwcvtu.x.x.v" => {
+                let (vd, vs2, vm) = vector::pseudo::parse_op_op_mask_format(operands)?;
+                Vwadduvx(Opmvx { dest: vd, rs1: alias::ZERO, vs2, vm })
+            }
+            "vnot.v" => {
+                let (vd, vs2, vm) = vector::pseudo::parse_op_op_mask_format(operands)?;
+                Vxorvi(Opivi { vd, imm5: -1, vs2, vm })
+            }
+            "vncvt.x.x.w" => {
+                let (vd, vs2, vm) = vector::pseudo::parse_op_op_mask_format(operands)?;
+                Vnsrlwx(Opivx { vd, rs1: alias::ZERO, vs2, vm })
+            }
+            "vmsgt.vv" => {
+                let (vd, vs2, vs1, vm) = vector::pseudo::parse_op_op_op_mask_format(operands)?;
+                Vmsltvv(Opivv { vd, vs1: vs2, vs2: vs1, vm })
+            }
+            "vmsgtu.vv" => {
+                let (vd, vs2, vs1, vm) = vector::pseudo::parse_op_op_op_mask_format(operands)?;
+                Vmsltuvv(Opivv { vd, vs1: vs2, vs2: vs1, vm })
+            }
+            "vmsge.vv" => {
+                let (vd, vs2, vs1, vm) = vector::pseudo::parse_op_op_op_mask_format(operands)?;
+                Vmslevv(Opivv { vd, vs1: vs2, vs2: vs1, vm })
+            }
+            "vmsgeu.vv" => {
+                let (vd, vs2, vs1, vm) = vector::pseudo::parse_op_op_op_mask_format(operands)?;
+                Vmsleuvv(Opivv { vd, vs1: vs2, vs2: vs1, vm })
+            }
+            "vmslt.vi" => {
+                let (vd, vs2, imm, vm) = vector::pseudo::parse_op_op_imm_mask_format(operands)?;
+                Vmslevi(Opivi { vd, imm5: imm - 1, vs2, vm })
+            }
+            "vmsltu.vi" => {
+                let (vd, vs2, imm, vm) = vector::pseudo::parse_op_op_imm_mask_format(operands)?;
+                Vmsleuvi(Opivi { vd, imm5: imm - 1, vs2, vm })
+            }
+            "vmsge.vi" => {
+                let (vd, vs2, imm, vm) = vector::pseudo::parse_op_op_imm_mask_format(operands)?;
+                Vmsgtvi(Opivi { vd, imm5: imm - 1, vs2, vm })
+            }
+            "vmsgeu.vi" => {
+                let (vd, vs2, imm, vm) = vector::pseudo::parse_op_op_imm_mask_format(operands)?;
+                Vmsgtuvi(Opivi { vd, imm5: imm - 1, vs2, vm })
+            }
+            "vmsge.vx" => {
+                match vector::pseudo::parse_op_op_xreg_format(operands) {
+                    Ok((vd, vs2, rs1)) => Fusion(
+                        Box::new(Vmsltvx(Opivx { vd, rs1, vs2, vm: false })), 
+                        Box::new(Vmnandmm(Opmvv { dest: vd, vs1: vd, vs2: vd, vm: false }))
+                    ),
+                    Err(fst_err) => match vector::pseudo::parse_op_op_xreg_mask_vd_nonzero_format(operands) {
+                        Ok((vd, vs2, rs1)) => Fusion(
+                            Box::new(Vmsltvx(Opivx { vd, rs1, vs2, vm: true })), 
+                            Box::new(Vmxormm(Opmvv { dest: vd, vs1: 0, vs2: vd, vm: false }))
+                        ),
+                        Err(snd_err) => match vector::pseudo::parse_op_op_xreg_mask_temp_format(operands) {
+                            Ok((vd, vs2, rs1, vt)) => if vd == 0 {
+                                Fusion(
+                                    Box::new(Vmsltvx(Opivx { vd: vt, rs1, vs2, vm: false })),
+                                    Box::new(Vmandnmm(Opmvv { dest: vd, vs1: vt, vs2: vd, vm: false })), 
+                                )
+                            } else {
+                                Fusion(
+                                    Box::new(Vmsltvx(Opivx { vd: vt, rs1, vs2, vm: false })),
+                                    Box::new(Fusion(
+                                        Box::new(Vmandnmm(Opmvv { dest: vt, vs1: vt, vs2: 0, vm: false })), 
+                                        Box::new(Fusion(
+                                            Box::new(Vmandnmm(Opmvv { dest: vd, vs1: 0, vs2: vd, vm: false })),
+                                            Box::new(Vmormm(Opmvv { dest: vd, vs1: vd, vs2: vt, vm: false }))
+                                        ))
+                                    )), 
+                                )
+                            }
+                            Err(trd_err) => return Err(format!("{}, {} or {}", fst_err, snd_err, trd_err))
+                        }
+                    }
+                }
+            }
+            "vmsgeu.vx" => {
+                match vector::pseudo::parse_op_op_xreg_format(operands) {
+                    Ok((vd, vs2, rs1)) => Fusion(
+                        Box::new(Vmsltuvx(Opivx { vd, rs1, vs2, vm: false })), 
+                        Box::new(Vmnandmm(Opmvv { dest: vd, vs1: vd, vs2: vd, vm: false }))
+                    ),
+                    Err(fst_err) => match vector::pseudo::parse_op_op_xreg_mask_vd_nonzero_format(operands) {
+                        Ok((vd, vs2, rs1)) => Fusion(
+                            Box::new(Vmsltuvx(Opivx { vd, rs1, vs2, vm: true })), 
+                            Box::new(Vmxormm(Opmvv { dest: vd, vs1: 0, vs2: vd, vm: false }))
+                        ),
+                        Err(snd_err) => match vector::pseudo::parse_op_op_xreg_mask_temp_format(operands) {
+                            Ok((vd, vs2, rs1, vt)) => if vd == 0 {
+                                Fusion(
+                                    Box::new(Vmsltuvx(Opivx { vd: vt, rs1, vs2, vm: false })),
+                                    Box::new(Vmandnmm(Opmvv { dest: vd, vs1: vt, vs2: vd, vm: false })), 
+                                )
+                            } else {
+                                Fusion(
+                                    Box::new(Vmsltuvx(Opivx { vd: vt, rs1, vs2, vm: false })),
+                                    Box::new(Fusion(
+                                        Box::new(Vmandnmm(Opmvv { dest: vt, vs1: vt, vs2: 0, vm: false })), 
+                                        Box::new(Fusion(
+                                            Box::new(Vmandnmm(Opmvv { dest: vd, vs1: 0, vs2: vd, vm: false })),
+                                            Box::new(Vmormm(Opmvv { dest: vd, vs1: vd, vs2: vt, vm: false }))
+                                        ))
+                                    )), 
+                                )
+                            }
+                            Err(trd_err) => return Err(format!("{}, {} or {}", fst_err, snd_err, trd_err))
+                        }
+                    }
+                }
+            }
+            "vfneg.v" => {
+                let (vd, vs2, vm) = vector::pseudo::parse_op_op_mask_format(operands)?;
+                Vfsgnjnvv(Opfvv { dest: vd, vs1: vs2, vs2, vm })
+            }
+            "vfabs.v" => {
+                let (vd, vs2, vm) = vector::pseudo::parse_op_op_mask_format(operands)?;
+                Vfsgnjxvv(Opfvv { dest: vd, vs1: vs2, vs2, vm })
+            }
+            "vmfgt.vv" => {
+                let (vd, vs2, vs1, vm) = vector::pseudo::parse_op_op_op_mask_format(operands)?;
+                Vmfltvv(Opfvv { dest: vd, vs1: vs2, vs2: vs1, vm })
+            }
+            "vmfge.vv" => {
+                let (vd, vs2, vs1, vm) = vector::pseudo::parse_op_op_op_mask_format(operands)?;
+                Vmflevv(Opfvv { dest: vd, vs1: vs2, vs2: vs1, vm })
+            }
+            "vmmv.m" => {
+                let (vd, vs2) = vector::pseudo::parse_op_op_format(operands)?;
+                Vmandmm(Opmvv { dest: vd, vs1: vs2, vs2, vm: false })
+            }
+            "vmclr.m" => {
+                let vd = vector::pseudo::parse_op_format(operands)?;
+                Vmxormm(Opmvv { dest: vd, vs1: vd, vs2: vd , vm: false })
+            }
+            "vmset.m" => {
+                let vd = vector::pseudo::parse_op_format(operands)?;
+                Vmxnormm(Opmvv { dest: vd, vs1: vd, vs2: vd , vm: false })
+            }
+            "vmnot.m" => {
+                let (vd, vs2) = vector::pseudo::parse_op_op_format(operands)?;
+                Vmnandmm(Opmvv { dest: vd, vs1: vs2, vs2, vm: false })
+            }
             _ => return Err(format!("Unknown mnemonic: {}", mnemonic)),
         };
 
@@ -2692,6 +2846,14 @@ impl Decoder {
             "vfrsqrte7.v" => "vfrsqrt7.v",
             "vfrece7.v" => "vfrec7.v",
             "vmcpy.m" => "vmmv.m",
+
+            // Technically pseudoinstructions, but without custom parsers
+            "vl1r.v" => "vl1re8.v",
+            "vl2r.v" => "vl2re8.v",
+            "vl4r.v" => "vl4re8.v",
+            "vl8r.v" => "vl8re8.v",
+
+
             _ => old,
         }
     }
