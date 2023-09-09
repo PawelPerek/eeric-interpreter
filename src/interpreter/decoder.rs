@@ -114,8 +114,31 @@ impl Decoder {
             "bgeu" => Bgeu(b(operands, labels, current_address)?),
             "blt" => Blt(b(operands, labels, current_address)?),
             "bltu" => Bltu(b(operands, labels, current_address)?),
-            "jal" => Jal(u(operands)?),
-            "jalr" => Jalr(l(operands)?),
+            "jal" => {
+                match u(operands) {
+                    Ok(instruction) => Jal(instruction),
+                    Err(fst_err) => match integer::pseudo::parse_label_format(operands, labels, current_address) {
+                        Ok(diff) => Jal(U {
+                            rd: 1,
+                            imm20: diff,
+                        }),
+                        Err(snd_err) => return Err(format!("{} or {}", fst_err, snd_err))
+                    },
+                }
+            },
+            "jalr" => {
+                match l(operands) {
+                    Ok(instruction) => Jalr(instruction),
+                    Err(fst_err) => match integer::pseudo::parse_op_format(operands) {
+                        Ok(rs1) => Jalr(I {
+                            rd: 1,
+                            rs1,
+                            imm12: 0,
+                        }),
+                        Err(snd_err) => return Err(format!("{} or {}", fst_err, snd_err))
+                    },
+                }
+            },
 
             "csrrw" => Csrrw(csrr(operands)?),
             "csrrs" => Csrrs(csrr(operands)?),
@@ -2453,22 +2476,10 @@ impl Decoder {
                 let diff = integer::pseudo::parse_label_format(operands, labels, current_address)?;
                 Jal(U { rd: 0, imm20: diff })
             }
-            "jal" => {
-                let diff = integer::pseudo::parse_label_format(operands, labels, current_address)?;
-                Jal(U { rd: 1, imm20: diff })
-            }
             "jr" => {
                 let rs1 = integer::pseudo::parse_op_format(operands)?;
                 Jalr(I {
                     rd: 0,
-                    rs1,
-                    imm12: 0,
-                })
-            }
-            "jalr" => {
-                let rs1 = integer::pseudo::parse_op_format(operands)?;
-                Jalr(I {
-                    rd: 1,
                     rs1,
                     imm12: 0,
                 })
@@ -2563,20 +2574,21 @@ impl Decoder {
                 })
             }
             "fscsr" => {
-                let (rd, rs1) = integer::pseudo::parse_op_op_format(operands)?;
-                Csrrw(Csrr {
-                    rd,
-                    csr: alias::FCSR,
-                    rs1,
-                })
-            }
-            "fscsr" => {
-                let rs = integer::pseudo::parse_op_format(operands)?;
-                Csrrw(Csrr {
-                    rd: 0,
-                    csr: alias::FCSR,
-                    rs1: rs,
-                })
+                match integer::pseudo::parse_op_op_format(operands) {
+                    Ok((rd, rs1)) => Csrrw(Csrr {
+                        rd,
+                        csr: alias::FCSR,
+                        rs1,
+                    }),
+                    Err(fst_err) => match integer::pseudo::parse_op_format(operands) {
+                        Ok(rs) => Csrrw(Csrr {
+                            rd: 0,
+                            csr: alias::FCSR,
+                            rs1: rs,
+                        }),
+                        Err(snd_err) => return Err(format!("{} or {}", fst_err, snd_err))
+                    }
+                }
             }
             "frrm" => {
                 let rd = integer::pseudo::parse_op_format(operands)?;
@@ -2587,36 +2599,38 @@ impl Decoder {
                 })
             }
             "fsrm" => {
-                let (rd, rs1) = integer::pseudo::parse_op_op_format(operands)?;
-                Csrrw(Csrr {
-                    rd,
-                    csr: alias::FRM,
-                    rs1,
-                })
-            }
-            "fsrm" => {
-                let rs = integer::pseudo::parse_op_format(operands)?;
-                Csrrw(Csrr {
-                    rd: 0,
-                    csr: alias::FRM,
-                    rs1: rs,
-                })
-            }
-            "fsrmi" => {
-                let (rd, imm) = integer::pseudo::parse_op_imm_format(operands)?;
-                Csrrwi(Csri {
-                    rd,
-                    csr: alias::FRM,
-                    uimm: imm as u32 as usize,
-                })
+                match integer::pseudo::parse_op_op_format(operands) {
+                    Ok((rd, rs1)) => Csrrw(Csrr {
+                        rd,
+                        csr: alias::FRM,
+                        rs1,
+                    }),
+                    Err(fst_err) => match integer::pseudo::parse_op_format(operands) {
+                        Ok(rs) => Csrrw(Csrr {
+                            rd: 0,
+                            csr: alias::FRM,
+                            rs1: rs,
+                        }),
+                        Err(snd_err) => return Err(format!("{} or {}", fst_err, snd_err))
+                    }
+                }
             }
             "fsrmi" => {
-                let imm = integer::pseudo::parse_imm_format(operands)?;
-                Csrrwi(Csri {
-                    rd: 0,
-                    csr: alias::FRM,
-                    uimm: imm as u32 as usize,
-                })
+                match integer::pseudo::parse_op_imm_format(operands) {
+                    Ok((rd, imm)) => Csrrwi(Csri {
+                        rd,
+                        csr: alias::FRM,
+                        uimm: imm as u32 as usize,
+                    }),
+                    Err(fst_err) => match integer::pseudo::parse_imm_format(operands) {
+                        Ok(imm) => Csrrwi(Csri {
+                            rd: 0,
+                            csr: alias::FRM,
+                            uimm: imm as u32 as usize,
+                        }),
+                        Err(snd_err) => return Err(format!("{} or {}", fst_err, snd_err))
+                    }
+                }
             }
             "frflags" => {
                 let rd = integer::pseudo::parse_op_format(operands)?;
@@ -2627,38 +2641,39 @@ impl Decoder {
                 })
             }
             "fsflags" => {
-                let (rd, rs1) = integer::pseudo::parse_op_op_format(operands)?;
-                Csrrw(Csrr {
-                    rd,
-                    csr: alias::FFLAGS,
-                    rs1,
-                })
-            }
-            "fsflags" => {
-                let rs1 = integer::pseudo::parse_op_format(operands)?;
-                Csrrw(Csrr {
-                    rd: 0,
-                    csr: alias::FFLAGS,
-                    rs1,
-                })
-            }
-            "fsflagsi" => {
-                let (rd, imm) = integer::pseudo::parse_op_imm_format(operands)?;
-                Csrrwi(Csri {
-                    rd,
-                    csr: alias::FFLAGS,
-                    uimm: imm as u32 as usize,
-                })
+                match integer::pseudo::parse_op_op_format(operands) {
+                    Ok((rd, rs1)) => Csrrw(Csrr {
+                        rd,
+                        csr: alias::FFLAGS,
+                        rs1,
+                    }),
+                    Err(fst_err) => match integer::pseudo::parse_op_format(operands) {
+                        Ok(rs1) => Csrrw(Csrr {
+                            rd: 0,
+                            csr: alias::FFLAGS,
+                            rs1,
+                        }),
+                        Err(snd_err) => return Err(format!("{} or {}", fst_err, snd_err))
+                    }
+                }
             }
             "fsflagsi" => {
-                let imm = integer::pseudo::parse_imm_format(operands)?;
-                Csrrwi(Csri {
-                    rd: 0,
-                    csr: alias::FFLAGS,
-                    uimm: imm as u32 as usize,
-                })
+                match integer::pseudo::parse_op_imm_format(operands) {
+                    Ok((rd, imm)) => Csrrwi(Csri {
+                        rd,
+                        csr: alias::FFLAGS,
+                        uimm: imm as u32 as usize,
+                    }),
+                    Err(fst_err) => match integer::pseudo::parse_imm_format(operands) {
+                        Ok(imm) => Csrrwi(Csri {
+                            rd: 0,
+                            csr: alias::FFLAGS,
+                            uimm: imm as u32 as usize,
+                        }),
+                        Err(snd_err) => return Err(format!("{} or {}", fst_err, snd_err))
+                    }
+                }
             }
-
             _ => return Err(format!("Unknown mnemonic: {}", mnemonic)),
         };
 
