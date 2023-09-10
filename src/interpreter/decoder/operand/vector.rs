@@ -3,25 +3,23 @@ use eeric::prelude::*;
 use super::{float, integer};
 
 fn construct_vtype(
-    (sew, lmul, tail, mask): (SEW, LMUL, MaskBehavior, MaskBehavior),
+    (sew, lmul, tail, mask): (BaseSew, Lmul, MaskBehavior, MaskBehavior),
 ) -> Result<u32, String> {
     let vsew = match sew {
-        SEW::E8 => 0b000,
-        SEW::E16 => 0b001,
-        SEW::E32 => 0b010,
-        SEW::E64 => 0b011,
-        SEW::E128 => return Err("Cannot construct vtype with SEW=128b".to_owned()),
+        BaseSew::E8 => 0b000,
+        BaseSew::E16 => 0b001,
+        BaseSew::E32 => 0b010,
+        BaseSew::E64 => 0b011
     };
 
     let vlmul = match lmul {
-        LMUL::MF8 => 0b101,
-        LMUL::MF4 => 0b110,
-        LMUL::MF2 => 0b111,
-        LMUL::M1 => 0b000,
-        LMUL::M2 => 0b001,
-        LMUL::M4 => 0b010,
-        LMUL::M8 => 0b011,
-        LMUL::M16 => return Err("Cannot construct vtype with LMUL=16".to_owned()),
+        Lmul::MF8 => 0b101,
+        Lmul::MF4 => 0b110,
+        Lmul::MF2 => 0b111,
+        Lmul::M1 => 0b000,
+        Lmul::M2 => 0b001,
+        Lmul::M4 => 0b010,
+        Lmul::M8 => 0b011
     };
 
     use MaskBehavior as MB;
@@ -38,24 +36,24 @@ fn construct_vtype(
     Ok(result)
 }
 
-fn parse_vtype(vtype: &[&str]) -> Result<(SEW, LMUL, MaskBehavior, MaskBehavior), String> {
+fn parse_vtype(vtype: &[&str]) -> Result<(BaseSew, Lmul, MaskBehavior, MaskBehavior), String> {
     let sew = match vtype[0] {
-        "e8" => SEW::E8,
-        "e16" => SEW::E16,
-        "e32" => SEW::E32,
-        "e64" => SEW::E64,
-        other => return Err(format!("Unknown SEW value: {}", other)),
+        "e8" => BaseSew::E8,
+        "e16" => BaseSew::E16,
+        "e32" => BaseSew::E32,
+        "e64" => BaseSew::E64,
+        other => return Err(format!("Unknown BaseSew value: {}", other)),
     };
 
     let lmul = match vtype[1] {
-        "mf8" => LMUL::MF8,
-        "mf4" => LMUL::MF4,
-        "mf2" => LMUL::MF2,
-        "m1" => LMUL::M1,
-        "m2" => LMUL::M2,
-        "m4" => LMUL::M4,
-        "m8" => LMUL::M8,
-        other => return Err(format!("Unknown LMUL value: {}", other)),
+        "mf8" => Lmul::MF8,
+        "mf4" => Lmul::MF4,
+        "mf2" => Lmul::MF2,
+        "m1" => Lmul::M1,
+        "m2" => Lmul::M2,
+        "m4" => Lmul::M4,
+        "m8" => Lmul::M8,
+        other => return Err(format!("Unknown Lmul value: {}", other)),
     };
 
     let tail = match vtype[2] {
@@ -77,7 +75,7 @@ pub fn parse_vsetvli_format(vsetvli: &str) -> Result<format::Vsetvli, String> {
     let tokens: Vec<&str> = vsetvli.split(", ").collect();
     if tokens.len() != 6 {
         return Err(format!(
-            "Expected format: 'rd, rs1, SEW, LMUL, ta/tu, ma/mu', got {} instead",
+            "Expected format: 'rd, rs1, BaseSew, Lmul, ta/tu, ma/mu', got {} instead",
             vsetvli
         ));
     }
@@ -97,7 +95,7 @@ pub fn parse_vsetivli_format(vsetivli: &str) -> Result<format::Vsetivli, String>
     let tokens: Vec<&str> = vsetivli.split(", ").collect();
     if tokens.len() != 6 {
         return Err(format!(
-            "Expected format: 'rd, uimm5, SEW, LMUL, ta/tu, ma/mu', got {} instead",
+            "Expected format: 'rd, uimm5, BaseSew, Lmul, ta/tu, ma/mu', got {} instead",
             vsetivli
         ));
     }
