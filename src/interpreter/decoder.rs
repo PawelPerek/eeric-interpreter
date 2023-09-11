@@ -2526,14 +2526,6 @@ impl Decoder {
                     rs1: 0,
                 })
             }
-            "rdinstreth" => {
-                let rd = integer::pseudo::parse_op_format(operands)?;
-                Csrrs(Csrr {
-                    rd,
-                    csr: alias::INSTRETH,
-                    rs1: 0,
-                })
-            }
             "rdcycle" => {
                 let rd = integer::pseudo::parse_op_format(operands)?;
                 Csrrs(Csrr {
@@ -2542,11 +2534,11 @@ impl Decoder {
                     rs1: 0,
                 })
             }
-            "rdcycleh" => {
+            "rdtime" => {
                 let rd = integer::pseudo::parse_op_format(operands)?;
                 Csrrs(Csrr {
                     rd,
-                    csr: alias::CYCLEH,
+                    csr: alias::TIME,
                     rs1: 0,
                 })
             }

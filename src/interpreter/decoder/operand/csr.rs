@@ -43,11 +43,11 @@ pub fn parse_csri_format(csri: &str) -> Result<format::Csri, String> {
 fn parse_operand(op: &str) -> Result<usize, String> {
     let operand = match op {
         "instret" => alias::INSTRET,
-        "instreth" => alias::INSTRETH,
+        "instreth" => return Err("instreth is RV32 only CSR".to_owned()),
         "cycle" => alias::CYCLE,
-        "cycleh" => alias::CYCLEH,
+        "cycleh" => return Err("cycleh is RV32 only CSR".to_owned()),
         "time" => alias::TIME,
-        "timeh" => alias::TIMEH,
+        "timeh" => return Err("timeh is RV32 only CSR".to_owned()),
         "marchid" => alias::MARCHID,
         "fcsr" => alias::FCSR,
         "fflags" => alias::FFLAGS,
