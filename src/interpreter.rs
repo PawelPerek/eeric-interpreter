@@ -45,7 +45,7 @@ impl Interpreter {
             match maybe_instruction {
                 Ok(instruction) => instructions.push(instruction),
                 Err(msg) => {
-                    errors.insert(current_line, msg);
+                    errors.insert(instructions_addresses[current_line], msg);
                 }
             };
         }
