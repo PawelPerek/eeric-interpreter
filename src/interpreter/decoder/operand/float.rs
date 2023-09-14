@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use eeric::prelude::*;
 
 pub fn parse_r4_format(r4: &str) -> Result<format::R4, String> {
@@ -16,6 +18,52 @@ pub fn parse_r4_format(r4: &str) -> Result<format::R4, String> {
     let rs3 = parse_operand(tokens[3])?;
 
     Ok(format::R4 { rd, rs1, rs2, rs3 })
+}
+
+pub fn parse_load_format(
+    i: &str,
+    memory_labels: &HashMap<String, usize>,
+) -> Result<format::I, String> {
+    let tokens: Vec<&str> = i.split(',').map(str::trim).collect();
+
+    if tokens.len() != 2 {
+        return Err(format!(
+            "Expected format: 'fd, imm(rs1)', got {} instead",
+            i
+        ));
+    }
+
+    let rd = parse_operand(tokens[0])?;
+    let (imm, rs1) = super::integer::parse_offset_addr_operand(tokens[1], memory_labels)?;
+
+    Ok(format::I {
+        rd,
+        rs1,
+        imm12: imm,
+    })
+}
+
+pub fn parse_store_format(
+    s: &str,
+    memory_labels: &HashMap<String, usize>,
+) -> Result<format::S, String> {
+    let tokens: Vec<&str> = s.split(',').map(str::trim).collect();
+
+    if tokens.len() != 2 {
+        return Err(format!(
+            "Expected format: 'rs2, imm(rs1)', got {} instead",
+            s
+        ));
+    }
+
+    let rs2 = parse_operand(tokens[0])?;
+    let (imm, rs1) = super::integer::parse_offset_addr_operand(tokens[1], memory_labels)?;
+
+    Ok(format::S {
+        rs1,
+        rs2,
+        imm12: imm,
+    })
 }
 
 pub fn parse_operand(op_str: &str) -> Result<usize, String> {

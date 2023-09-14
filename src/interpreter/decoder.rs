@@ -113,7 +113,7 @@ impl Decoder {
 
         use csr::{parse_csri_format as csri, parse_csrr_format as csrr};
 
-        use float::parse_r4_format as r4;
+        use float::{parse_r4_format as r4, parse_load_format as fl, parse_store_format as fs};
 
         use vector::{
             parse_opfvf_fma_format as opfvf_fma, parse_opfvf_format as opfvf,
@@ -236,8 +236,8 @@ impl Decoder {
             "remw" => Remw(r(op)?),
             "remuw" => Remuw(r(op)?),
 
-            "flw" => Flw(l(op, memory_labels)?),
-            "fsw" => Fsw(s(op, memory_labels)?),
+            "flw" => Flw(fl(op, memory_labels)?),
+            "fsw" => Fsw(fs(op, memory_labels)?),
             "fmadd.s" => Fmadds(r4(op)?),
             "fmsub.s" => Fmsubs(r4(op)?),
             "fnmsub.s" => Fnmsubs(r4(op)?),
@@ -267,8 +267,8 @@ impl Decoder {
             "fcvt.s.l" => Fcvtsl(r(op)?),
             "fcvt.s.lu" => Fcvtslu(r(op)?),
 
-            "fld" => Fld(l(op, memory_labels)?),
-            "fsd" => Fsd(s(op, memory_labels)?),
+            "fld" => Fld(fl(op, memory_labels)?),
+            "fsd" => Fsd(fs(op, memory_labels)?),
             "fmadd.d" => Fmaddd(r4(op)?),
             "fmsub.d" => Fmsubd(r4(op)?),
             "fnmsub.d" => Fnmsubd(r4(op)?),

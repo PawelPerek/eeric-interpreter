@@ -95,7 +95,7 @@ fn parse_ascii(ascii: &str) -> Result<Vec<ascii::Char>, String> {
     let ascii = unwrapped
         .as_ascii()
         .ok_or_else(|| format!("Unable to parse {} as an ascii string", ascii))?;
-    Ok(ascii.iter().cloned().collect::<Vec<_>>())
+    Ok(ascii.to_vec())
 }
 
 pub fn parse_string(string: &str) -> Result<Data, String> {
