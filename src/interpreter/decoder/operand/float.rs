@@ -66,6 +66,104 @@ pub fn parse_store_format(
     })
 }
 
+pub fn parse_r_format(r: &str) -> Result<format::R, String> {
+    let tokens: Vec<&str> = r.split(',').map(str::trim).collect();
+
+    if tokens.len() != 3 {
+        return Err(format!(
+            "Expected format: 'fd, fs1, fs2', got {} instead",
+            r
+        ));
+    }
+
+    let rd = parse_operand(tokens[0])?;
+    let rs1 = parse_operand(tokens[1])?;
+    let rs2 = parse_operand(tokens[2])?;
+
+    Ok(format::R { rd, rs1, rs2 })
+}
+
+pub fn parse_r_single_reg_format(r: &str) -> Result<format::R, String> {
+    let tokens: Vec<&str> = r.split(',').map(str::trim).collect();
+
+    if tokens.len() != 2 {
+        return Err(format!(
+            "Expected format: 'fd, fs1', got {} instead",
+            r
+        ));
+    }
+
+    let rd = parse_operand(tokens[0])?;
+    let rs1 = parse_operand(tokens[1])?;
+
+    Ok(format::R { rd, rs1, rs2: 0 })
+}
+
+pub fn parse_r_to_x_format(r: &str) -> Result<format::R, String> {
+    let tokens: Vec<&str> = r.split(',').map(str::trim).collect();
+
+    if tokens.len() != 3 {
+        return Err(format!(
+            "Expected format: 'rd, fs1, fs2', got {} instead",
+            r
+        ));
+    }
+
+    let rd = super::integer::parse_operand(tokens[0])?;
+    let rs1 = parse_operand(tokens[1])?;
+    let rs2 = parse_operand(tokens[2])?;
+
+    Ok(format::R { rd, rs1, rs2 })
+}
+
+pub fn parse_r_single_reg_to_x_format(r: &str) -> Result<format::R, String> {
+    let tokens: Vec<&str> = r.split(',').map(str::trim).collect();
+
+    if tokens.len() != 3 {
+        return Err(format!(
+            "Expected format: 'rd, fs1', got {} instead",
+            r
+        ));
+    }
+
+    let rd = super::integer::parse_operand(tokens[0])?;
+    let rs1 = parse_operand(tokens[1])?;
+
+    Ok(format::R { rd, rs1, rs2: 0 })
+}
+
+pub fn parse_r_fcvt_to_x_format(r: &str) -> Result<format::R, String> {
+    let tokens: Vec<&str> = r.split(',').map(str::trim).collect();
+
+    if tokens.len() != 3 {
+        return Err(format!(
+            "Expected format: 'rd, fs1', got {} instead",
+            r
+        ));
+    }
+
+    let rd = super::integer::parse_operand(tokens[0])?;
+    let rs1 = parse_operand(tokens[1])?;
+
+    Ok(format::R { rd, rs1, rs2: 0 })
+}
+
+pub fn parse_r_fcvt_to_f_format(r: &str) -> Result<format::R, String> {
+    let tokens: Vec<&str> = r.split(',').map(str::trim).collect();
+
+    if tokens.len() != 3 {
+        return Err(format!(
+            "Expected format: 'fd, rs1', got {} instead",
+            r
+        ));
+    }
+
+    let rd = parse_operand(tokens[0])?;
+    let rs1 = super::integer::parse_operand(tokens[1])?;
+
+    Ok(format::R { rd, rs1, rs2: 0 })
+}
+
 pub fn parse_operand(op_str: &str) -> Result<usize, String> {
     let op = match op_str {
         "f0" | "ft0" => 0,

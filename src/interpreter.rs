@@ -120,18 +120,20 @@ mod tests {
         inner_loop:
             add x1, x1, x1
             bnez x1, loop
+            ld a0, .hw1(x0)
             ld a0, .hw2(x0)
+            ld a0, .hw3(x0)
         .data
-        .hw:
-            .string "abc"
+        .hw1:
+            .float 3.141
         .hw2:
-            .asciz "def"
+            .string "abc"
         .hw3:
-            .string "ghi"
+            .asciz "def"
         "#
         .trim_start();
 
-        let compilation_result = Interpreter::compile(input.to_owned(), 10).unwrap();
+        let compilation_result = Interpreter::compile(input.to_owned(), 12).unwrap();
 
         assert_eq!(
             compilation_result.instructions,
@@ -154,24 +156,29 @@ mod tests {
                 Instruction::Ld(format::I {
                     rd: 10,
                     rs1: 0,
-                    imm12: 3
+                    imm12: 0
+                }),
+                Instruction::Ld(format::I {
+                    rd: 10,
+                    rs1: 0,
+                    imm12: 4
+                }),
+                Instruction::Ld(format::I {
+                    rd: 10,
+                    rs1: 0,
+                    imm12: 7
                 })
             ]
         );
 
         assert_eq!(
             compilation_result.instructions_addresses,
-            vec![
-                1,
-                4,
-                5,
-                6
-            ]
+            vec![1, 4, 5, 6, 7, 8]
         );
 
         assert_eq!(
             compilation_result.memory.snapshot().into_iter().collect::<Vec<_>>(),
-            vec![97, 98, 99, 100, 101, 102, 0, 103, 104, 105]
+            vec![37, 6, 73, 64, 97, 98, 99, 100, 101, 102, 0, 0]
         );
     }
 }
