@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use eeric::prelude::*;
 
 pub fn parse_r_format(r: &str) -> Result<format::R, String> {
-    let tokens: Vec<&str> = r.split(", ").collect();
+    let tokens: Vec<&str> = r.split(',').map(str::trim).collect();
 
     if tokens.len() != 3 {
         return Err(format!(
@@ -20,7 +20,7 @@ pub fn parse_r_format(r: &str) -> Result<format::R, String> {
 }
 
 pub fn parse_i_format(i: &str) -> Result<format::I, String> {
-    let tokens: Vec<&str> = i.split(", ").collect();
+    let tokens: Vec<&str> = i.split(',').map(str::trim).collect();
 
     if tokens.len() != 3 {
         return Err(format!(
@@ -40,8 +40,11 @@ pub fn parse_i_format(i: &str) -> Result<format::I, String> {
     })
 }
 
-pub fn parse_load_format(i: &str) -> Result<format::I, String> {
-    let tokens: Vec<&str> = i.split(", ").collect();
+pub fn parse_load_format(
+    i: &str,
+    memory_labels: &HashMap<String, usize>,
+) -> Result<format::I, String> {
+    let tokens: Vec<&str> = i.split(',').map(str::trim).collect();
 
     if tokens.len() != 2 {
         return Err(format!(
@@ -50,8 +53,8 @@ pub fn parse_load_format(i: &str) -> Result<format::I, String> {
         ));
     }
 
-    let rd = parse_operand(tokens[0].trim())?;
-    let (imm, rs1) = parse_offset_addr_operand(tokens[1].trim())?;
+    let rd = parse_operand(tokens[0])?;
+    let (imm, rs1) = parse_offset_addr_operand(tokens[1], memory_labels)?;
 
     Ok(format::I {
         rd,
@@ -60,8 +63,11 @@ pub fn parse_load_format(i: &str) -> Result<format::I, String> {
     })
 }
 
-pub fn parse_s_format(s: &str) -> Result<format::S, String> {
-    let tokens: Vec<&str> = s.split(", ").collect();
+pub fn parse_s_format(
+    s: &str,
+    memory_labels: &HashMap<String, usize>,
+) -> Result<format::S, String> {
+    let tokens: Vec<&str> = s.split(',').map(str::trim).collect();
 
     if tokens.len() != 2 {
         return Err(format!(
@@ -70,8 +76,8 @@ pub fn parse_s_format(s: &str) -> Result<format::S, String> {
         ));
     }
 
-    let rs2 = parse_operand(tokens[0].trim())?;
-    let (imm, rs1) = parse_offset_addr_operand(tokens[1].trim())?;
+    let rs2 = parse_operand(tokens[0])?;
+    let (imm, rs1) = parse_offset_addr_operand(tokens[1], memory_labels)?;
 
     Ok(format::S {
         rs1,
@@ -85,7 +91,7 @@ pub fn parse_branch_format(
     labels: &HashMap<String, usize>,
     current_line: usize,
 ) -> Result<format::S, String> {
-    let tokens: Vec<&str> = s.split(", ").collect();
+    let tokens: Vec<&str> = s.split(',').map(str::trim).collect();
 
     if tokens.len() != 3 {
         return Err(format!(
@@ -96,7 +102,7 @@ pub fn parse_branch_format(
 
     let rs1 = parse_operand(tokens[0])?;
     let rs2 = parse_operand(tokens[1])?;
-    let label_addr = parse_label(tokens[2], labels, current_line)?;
+    let label_addr = parse_instruction_label(tokens[2], labels, current_line)?;
 
     Ok(format::S {
         rs1,
@@ -106,7 +112,7 @@ pub fn parse_branch_format(
 }
 
 pub fn parse_u_format(u: &str) -> Result<format::U, String> {
-    let tokens: Vec<&str> = u.split(", ").collect();
+    let tokens: Vec<&str> = u.split(',').map(str::trim).collect();
 
     if tokens.len() != 2 {
         return Err(format!("Expected format: 'rd, imm', got {} instead", u));
@@ -118,7 +124,10 @@ pub fn parse_u_format(u: &str) -> Result<format::U, String> {
     Ok(format::U { rd, imm20: imm })
 }
 
-pub fn parse_offset_addr_operand(op: &str) -> Result<(i32, usize), String> {
+pub fn parse_offset_addr_operand(
+    op: &str,
+    memory_labels: &HashMap<String, usize>,
+) -> Result<(i32, usize), String> {
     let Some(operand_addr) = op.find('(') else {
         return Err(format!(
             "Expected format: 'imm(rs1)' for the address with offset, got {} instead",
@@ -128,7 +137,7 @@ pub fn parse_offset_addr_operand(op: &str) -> Result<(i32, usize), String> {
 
     let (imm, reg) = op.split_at(operand_addr);
 
-    let imm = parse_optional_immediate(imm)?;
+    let imm = parse_immediate_or_memory_label(imm, memory_labels)?;
     let reg = parse_addr_operand(reg)?;
 
     Ok((imm, reg))
@@ -202,15 +211,29 @@ pub fn parse_immediate(imm: &str) -> Result<i32, String> {
     }
 }
 
-pub fn parse_optional_immediate(imm: &str) -> Result<i32, String> {
-    if imm.is_empty() {
-        Ok(0)
-    } else {
-        parse_immediate(imm)
+pub fn parse_immediate_or_memory_label(
+    imm_or_mem: &str,
+    memory_labels: &HashMap<String, usize>,
+) -> Result<i32, String> {
+    if imm_or_mem.is_empty() {
+        return Ok(0);
+    }
+
+    match parse_immediate(imm_or_mem) {
+        Ok(imm) => Ok(imm),
+        Err(imm_err) => parse_memory_label(imm_or_mem, memory_labels)
+            .map_err(|addr_err| format!("{} or {}", imm_err, addr_err)),
     }
 }
 
-pub fn parse_label(
+pub fn parse_memory_label(label: &str, map: &HashMap<String, usize>) -> Result<i32, String> {
+    map.get(label)
+        .cloned()
+        .map(|addr| addr as i32)
+        .ok_or(format!("Did not find memory label {}", label))
+}
+
+pub fn parse_instruction_label(
     label: &str,
     map: &HashMap<String, usize>,
     current_line: usize,
@@ -218,14 +241,14 @@ pub fn parse_label(
     map.get(label)
         .cloned()
         .map(|addr| addr.wrapping_sub(current_line).wrapping_sub(4) as i32)
-        .ok_or(format!("Did not find label {}", label))
+        .ok_or(format!("Did not find instruction label {}", label))
 }
 
 pub mod pseudo {
     use std::collections::HashMap;
 
     pub fn parse_imm_format(imm: &str) -> Result<i32, String> {
-        let tokens: Vec<&str> = imm.split(", ").collect();
+        let tokens: Vec<&str> = imm.split(',').map(str::trim).collect();
 
         if tokens.len() != 1 {
             return Err(format!("Expected format: 'imm', got {} instead", imm));
@@ -237,7 +260,7 @@ pub mod pseudo {
     }
 
     pub fn parse_op_imm_format(op_imm: &str) -> Result<(usize, i32), String> {
-        let tokens: Vec<&str> = op_imm.split(", ").collect();
+        let tokens: Vec<&str> = op_imm.split(',').map(str::trim).collect();
 
         if tokens.len() != 2 {
             return Err(format!(
@@ -253,7 +276,7 @@ pub mod pseudo {
     }
 
     pub fn parse_op_format(op: &str) -> Result<usize, String> {
-        let tokens: Vec<&str> = op.split(", ").collect();
+        let tokens: Vec<&str> = op.split(',').map(str::trim).collect();
 
         if tokens.len() != 1 {
             return Err(format!("Expected format: 'xreg', got {} instead", op));
@@ -265,7 +288,7 @@ pub mod pseudo {
     }
 
     pub fn parse_op_op_format(op_op: &str) -> Result<(usize, usize), String> {
-        let tokens: Vec<&str> = op_op.split(", ").collect();
+        let tokens: Vec<&str> = op_op.split(',').map(str::trim).collect();
 
         if tokens.len() != 2 {
             return Err(format!(
@@ -285,13 +308,13 @@ pub mod pseudo {
         labels: &HashMap<String, usize>,
         current_line: usize,
     ) -> Result<i32, String> {
-        let tokens: Vec<&str> = label.split(", ").collect();
+        let tokens: Vec<&str> = label.split(',').map(str::trim).collect();
 
         if tokens.len() != 1 {
             return Err(format!("Expected format: 'label', got {} instead", label));
         }
 
-        let diff = super::parse_label(tokens[0], labels, current_line)?;
+        let diff = super::parse_instruction_label(tokens[0], labels, current_line)?;
 
         Ok(diff)
     }
@@ -301,7 +324,7 @@ pub mod pseudo {
         labels: &HashMap<String, usize>,
         current_line: usize,
     ) -> Result<(usize, i32), String> {
-        let tokens: Vec<&str> = op_label.split(", ").collect();
+        let tokens: Vec<&str> = op_label.split(',').map(str::trim).collect();
 
         if tokens.len() != 2 {
             return Err(format!(
@@ -311,7 +334,26 @@ pub mod pseudo {
         }
 
         let reg = super::parse_operand(tokens[0])?;
-        let diff = super::parse_label(tokens[1], labels, current_line)?;
+        let diff = super::parse_instruction_label(tokens[1], labels, current_line)?;
+
+        Ok((reg, diff))
+    }
+
+    pub fn parse_op_memory_label_format(
+        op_label: &str,
+        memory_labels: &HashMap<String, usize>
+    ) -> Result<(usize, i32), String> {
+        let tokens: Vec<&str> = op_label.split(',').map(str::trim).collect();
+
+        if tokens.len() != 2 {
+            return Err(format!(
+                "Expected format: 'xreg, memory_label', got {} instead",
+                op_label
+            ));
+        }
+
+        let reg = super::parse_operand(tokens[0])?;
+        let diff = super::parse_memory_label(tokens[1], memory_labels)?;
 
         Ok((reg, diff))
     }
@@ -321,7 +363,7 @@ pub mod pseudo {
         labels: &HashMap<String, usize>,
         current_line: usize,
     ) -> Result<(usize, usize, i32), String> {
-        let tokens: Vec<&str> = op_op_label.split(", ").collect();
+        let tokens: Vec<&str> = op_op_label.split(',').map(str::trim).collect();
 
         if tokens.len() != 3 {
             return Err(format!(
@@ -332,7 +374,7 @@ pub mod pseudo {
 
         let xreg1 = super::parse_operand(tokens[0])?;
         let xreg2 = super::parse_operand(tokens[1])?;
-        let diff = super::parse_label(tokens[2], labels, current_line)?;
+        let diff = super::parse_instruction_label(tokens[2], labels, current_line)?;
 
         Ok((xreg1, xreg2, diff))
     }

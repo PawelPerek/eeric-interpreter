@@ -9,7 +9,7 @@ fn construct_vtype(
         BaseSew::E8 => 0b000,
         BaseSew::E16 => 0b001,
         BaseSew::E32 => 0b010,
-        BaseSew::E64 => 0b011
+        BaseSew::E64 => 0b011,
     };
 
     let vlmul = match lmul {
@@ -19,7 +19,7 @@ fn construct_vtype(
         Lmul::M1 => 0b000,
         Lmul::M2 => 0b001,
         Lmul::M4 => 0b010,
-        Lmul::M8 => 0b011
+        Lmul::M8 => 0b011,
     };
 
     use MaskBehavior as MB;
@@ -72,7 +72,7 @@ fn parse_vtype(vtype: &[&str]) -> Result<(BaseSew, Lmul, MaskBehavior, MaskBehav
 }
 
 pub fn parse_vsetvli_format(vsetvli: &str) -> Result<format::Vsetvli, String> {
-    let tokens: Vec<&str> = vsetvli.split(", ").collect();
+    let tokens: Vec<&str> = vsetvli.split(',').map(str::trim).collect();
     if tokens.len() != 6 {
         return Err(format!(
             "Expected format: 'rd, rs1, BaseSew, Lmul, ta/tu, ma/mu', got {} instead",
@@ -92,7 +92,7 @@ pub fn parse_vsetvli_format(vsetvli: &str) -> Result<format::Vsetvli, String> {
 }
 
 pub fn parse_vsetivli_format(vsetivli: &str) -> Result<format::Vsetivli, String> {
-    let tokens: Vec<&str> = vsetivli.split(", ").collect();
+    let tokens: Vec<&str> = vsetivli.split(',').map(str::trim).collect();
     if tokens.len() != 6 {
         return Err(format!(
             "Expected format: 'rd, uimm5, BaseSew, Lmul, ta/tu, ma/mu', got {} instead",
@@ -113,7 +113,7 @@ pub fn parse_vsetivli_format(vsetivli: &str) -> Result<format::Vsetivli, String>
 }
 
 pub fn parse_vsetvl_format(vsetvl: &str) -> Result<format::Vsetvl, String> {
-    let tokens: Vec<&str> = vsetvl.split(", ").collect();
+    let tokens: Vec<&str> = vsetvl.split(',').map(str::trim).collect();
     if tokens.len() != 3 {
         return Err(format!(
             "Expected format: 'rd, rs1, rs2', got {} instead",
@@ -129,7 +129,7 @@ pub fn parse_vsetvl_format(vsetvl: &str) -> Result<format::Vsetvl, String> {
 }
 
 pub fn parse_vl_format(vl: &str) -> Result<format::Vl, String> {
-    let tokens: Vec<&str> = vl.split(", ").collect();
+    let tokens: Vec<&str> = vl.split(',').map(str::trim).collect();
     if tokens.len() != 2 && tokens.len() != 3 {
         return Err(format!(
             "Expected format: 'vd, (rs1), [vm]', got {} instead",
@@ -150,7 +150,7 @@ pub fn parse_vl_format(vl: &str) -> Result<format::Vl, String> {
 }
 
 pub fn parse_vlm_format(vlm: &str) -> Result<format::Vl, String> {
-    let tokens: Vec<&str> = vlm.split(", ").collect();
+    let tokens: Vec<&str> = vlm.split(',').map(str::trim).collect();
     if tokens.len() != 2 {
         return Err(format!("Expected format: 'vd, (rs1)', got {} instead", vlm));
     }
@@ -162,7 +162,7 @@ pub fn parse_vlm_format(vlm: &str) -> Result<format::Vl, String> {
 }
 
 pub fn parse_vls_format(vls: &str) -> Result<format::Vls, String> {
-    let tokens: Vec<&str> = vls.split(", ").collect();
+    let tokens: Vec<&str> = vls.split(',').map(str::trim).collect();
     if tokens.len() != 3 && tokens.len() != 4 {
         return Err(format!(
             "Expected format: 'vd, (rs1), rs2, [vm]', got {} instead",
@@ -184,7 +184,7 @@ pub fn parse_vls_format(vls: &str) -> Result<format::Vls, String> {
 }
 
 pub fn parse_vlx_format(vlx: &str) -> Result<format::Vlx, String> {
-    let tokens: Vec<&str> = vlx.split(", ").collect();
+    let tokens: Vec<&str> = vlx.split(',').map(str::trim).collect();
     if tokens.len() != 3 && tokens.len() != 4 {
         return Err(format!(
             "Expected format: 'vd, (rs1), vs2, [vm]', got {} instead",
@@ -206,7 +206,7 @@ pub fn parse_vlx_format(vlx: &str) -> Result<format::Vlx, String> {
 }
 
 pub fn parse_vlr_format(vlr: &str) -> Result<format::Vlr, String> {
-    let tokens: Vec<&str> = vlr.split(", ").collect();
+    let tokens: Vec<&str> = vlr.split(',').map(str::trim).collect();
     if tokens.len() != 2 {
         return Err(format!("Expected format: 'vd, (rs1)', got {} instead", vlr));
     }
@@ -218,7 +218,7 @@ pub fn parse_vlr_format(vlr: &str) -> Result<format::Vlr, String> {
 }
 
 pub fn parse_vs_format(vs: &str) -> Result<format::Vs, String> {
-    let tokens: Vec<&str> = vs.split(", ").collect();
+    let tokens: Vec<&str> = vs.split(',').map(str::trim).collect();
     if tokens.len() != 2 && tokens.len() != 3 {
         return Err(format!(
             "Expected format: 'vs3, (rs1), [vm]', got {} instead",
@@ -239,7 +239,7 @@ pub fn parse_vs_format(vs: &str) -> Result<format::Vs, String> {
 }
 
 pub fn parse_vsm_format(vsm: &str) -> Result<format::Vs, String> {
-    let tokens: Vec<&str> = vsm.split(", ").collect();
+    let tokens: Vec<&str> = vsm.split(',').map(str::trim).collect();
     if tokens.len() != 2 {
         return Err(format!(
             "Expected format: 'vs3, (rs1)', got {} instead",
@@ -258,7 +258,7 @@ pub fn parse_vsm_format(vsm: &str) -> Result<format::Vs, String> {
 }
 
 pub fn parse_vss_format(vss: &str) -> Result<format::Vss, String> {
-    let tokens: Vec<&str> = vss.split(", ").collect();
+    let tokens: Vec<&str> = vss.split(',').map(str::trim).collect();
     if tokens.len() != 3 && tokens.len() != 4 {
         return Err(format!(
             "Expected format: 'vs3, (rs1), rs2, [vm]', got {} instead",
@@ -280,7 +280,7 @@ pub fn parse_vss_format(vss: &str) -> Result<format::Vss, String> {
 }
 
 pub fn parse_vsx_format(vsx: &str) -> Result<format::Vsx, String> {
-    let tokens: Vec<&str> = vsx.split(", ").collect();
+    let tokens: Vec<&str> = vsx.split(',').map(str::trim).collect();
     if tokens.len() != 3 && tokens.len() != 4 {
         return Err(format!(
             "Expected format: 'vs3, (rs1), vs2, [vm]', got {} instead",
@@ -302,7 +302,7 @@ pub fn parse_vsx_format(vsx: &str) -> Result<format::Vsx, String> {
 }
 
 pub fn parse_vsr_format(vsr: &str) -> Result<format::Vsr, String> {
-    let tokens: Vec<&str> = vsr.split(", ").collect();
+    let tokens: Vec<&str> = vsr.split(',').map(str::trim).collect();
     if tokens.len() != 2 {
         return Err(format!(
             "Expected format: 'vs3, (rs1)', got {} instead",
@@ -317,7 +317,7 @@ pub fn parse_vsr_format(vsr: &str) -> Result<format::Vsr, String> {
 }
 
 pub fn parse_opivv_format(opivv: &str) -> Result<format::Opivv, String> {
-    let tokens: Vec<&str> = opivv.split(", ").collect();
+    let tokens: Vec<&str> = opivv.split(',').map(str::trim).collect();
     if tokens.len() != 3 && tokens.len() != 4 {
         return Err(format!(
             "Expected format: 'vd, vs2, vs1, [vm]', got {} instead",
@@ -339,7 +339,7 @@ pub fn parse_opivv_format(opivv: &str) -> Result<format::Opivv, String> {
 }
 
 pub fn parse_opivv_v0_format(opivv: &str) -> Result<format::Opivv, String> {
-    let tokens: Vec<&str> = opivv.split(", ").collect();
+    let tokens: Vec<&str> = opivv.split(',').map(str::trim).collect();
     if tokens.len() != 4 {
         return Err(format!(
             "Expected format: 'vd, vs2, vs1, v0', got {} instead",
@@ -354,11 +354,16 @@ pub fn parse_opivv_v0_format(opivv: &str) -> Result<format::Opivv, String> {
         return Err("Expected last operand to be v0".to_owned());
     }
 
-    Ok(format::Opivv { vd, vs2, vs1, vm: true })
+    Ok(format::Opivv {
+        vd,
+        vs2,
+        vs1,
+        vm: true,
+    })
 }
 
 pub fn parse_opivv_maskless_format(opivv: &str) -> Result<format::Opivv, String> {
-    let tokens: Vec<&str> = opivv.split(", ").collect();
+    let tokens: Vec<&str> = opivv.split(',').map(str::trim).collect();
     if tokens.len() != 3 {
         return Err(format!(
             "Expected format: 'vd, vs2, vs1', got {} instead",
@@ -370,11 +375,16 @@ pub fn parse_opivv_maskless_format(opivv: &str) -> Result<format::Opivv, String>
     let vs2 = parse_operand(tokens[1])?.as_register()?;
     let vs1 = parse_operand(tokens[2])?.as_register()?;
 
-    Ok(format::Opivv { vd, vs2, vs1, vm: true })
+    Ok(format::Opivv {
+        vd,
+        vs2,
+        vs1,
+        vm: true,
+    })
 }
 
 pub fn parse_opivv_vmv_format(opivv_vmv: &str) -> Result<format::Opivv, String> {
-    let tokens: Vec<&str> = opivv_vmv.split(", ").collect();
+    let tokens: Vec<&str> = opivv_vmv.split(',').map(str::trim).collect();
     if tokens.len() != 2 {
         return Err(format!(
             "Expected format: 'vd, vs1', got {} instead",
@@ -394,7 +404,7 @@ pub fn parse_opivv_vmv_format(opivv_vmv: &str) -> Result<format::Opivv, String> 
 }
 
 pub fn parse_opivx_format(opivx: &str) -> Result<format::Opivx, String> {
-    let tokens: Vec<&str> = opivx.split(", ").collect();
+    let tokens: Vec<&str> = opivx.split(',').map(str::trim).collect();
     if tokens.len() != 3 && tokens.len() != 4 {
         return Err(format!(
             "Expected format: 'vd, vs2, rs1, [vm]', got {} instead",
@@ -416,7 +426,7 @@ pub fn parse_opivx_format(opivx: &str) -> Result<format::Opivx, String> {
 }
 
 pub fn parse_opivx_v0_format(opivx: &str) -> Result<format::Opivx, String> {
-    let tokens: Vec<&str> = opivx.split(", ").collect();
+    let tokens: Vec<&str> = opivx.split(',').map(str::trim).collect();
     if tokens.len() != 4 {
         return Err(format!(
             "Expected format: 'vd, vs2, rs1, v0', got {} instead",
@@ -431,11 +441,16 @@ pub fn parse_opivx_v0_format(opivx: &str) -> Result<format::Opivx, String> {
         return Err("Expected last operand to be v0".to_owned());
     }
 
-    Ok(format::Opivx { vd, vs2, rs1, vm: false })
+    Ok(format::Opivx {
+        vd,
+        vs2,
+        rs1,
+        vm: false,
+    })
 }
 
 pub fn parse_opivx_maskless_format(opivx: &str) -> Result<format::Opivx, String> {
-    let tokens: Vec<&str> = opivx.split(", ").collect();
+    let tokens: Vec<&str> = opivx.split(',').map(str::trim).collect();
     if tokens.len() != 3 {
         return Err(format!(
             "Expected format: 'vd, vs2, rs1', got {} instead",
@@ -447,11 +462,16 @@ pub fn parse_opivx_maskless_format(opivx: &str) -> Result<format::Opivx, String>
     let vs2 = parse_operand(tokens[1])?.as_register()?;
     let rs1 = integer::parse_operand(tokens[2])?;
 
-    Ok(format::Opivx { vd, vs2, rs1, vm: false })
+    Ok(format::Opivx {
+        vd,
+        vs2,
+        rs1,
+        vm: false,
+    })
 }
 
 pub fn parse_opivx_vmv_format(opivx_vmv: &str) -> Result<format::Opivx, String> {
-    let tokens: Vec<&str> = opivx_vmv.split(", ").collect();
+    let tokens: Vec<&str> = opivx_vmv.split(',').map(str::trim).collect();
     if tokens.len() != 2 {
         return Err(format!(
             "Expected format: 'vd, rs1', got {} instead",
@@ -471,7 +491,7 @@ pub fn parse_opivx_vmv_format(opivx_vmv: &str) -> Result<format::Opivx, String> 
 }
 
 pub fn parse_opivi_format(opivi: &str) -> Result<format::Opivi, String> {
-    let tokens: Vec<&str> = opivi.split(", ").collect();
+    let tokens: Vec<&str> = opivi.split(',').map(str::trim).collect();
     if tokens.len() != 3 && tokens.len() != 4 {
         return Err(format!(
             "Expected format: 'vd, vs2, imm, [vm]', got {} instead",
@@ -498,7 +518,7 @@ pub fn parse_opivi_format(opivi: &str) -> Result<format::Opivi, String> {
 }
 
 pub fn parse_opivi_v0_format(opivi: &str) -> Result<format::Opivi, String> {
-    let tokens: Vec<&str> = opivi.split(", ").collect();
+    let tokens: Vec<&str> = opivi.split(',').map(str::trim).collect();
     if tokens.len() != 4 {
         return Err(format!(
             "Expected format: 'vd, vs2, imm, v0', got {} instead",
@@ -522,7 +542,7 @@ pub fn parse_opivi_v0_format(opivi: &str) -> Result<format::Opivi, String> {
 }
 
 pub fn parse_opivi_maskless_format(opivi: &str) -> Result<format::Opivi, String> {
-    let tokens: Vec<&str> = opivi.split(", ").collect();
+    let tokens: Vec<&str> = opivi.split(',').map(str::trim).collect();
     if tokens.len() != 3 {
         return Err(format!(
             "Expected format: 'vd, vs2, imm', got {} instead",
@@ -543,7 +563,7 @@ pub fn parse_opivi_maskless_format(opivi: &str) -> Result<format::Opivi, String>
 }
 
 pub fn parse_opivi_vmv_format(opivi_vmv: &str) -> Result<format::Opivi, String> {
-    let tokens: Vec<&str> = opivi_vmv.split(", ").collect();
+    let tokens: Vec<&str> = opivi_vmv.split(',').map(str::trim).collect();
     if tokens.len() != 2 {
         return Err(format!(
             "Expected format: 'vd, imm', got {} instead",
@@ -563,7 +583,7 @@ pub fn parse_opivi_vmv_format(opivi_vmv: &str) -> Result<format::Opivi, String> 
 }
 
 pub fn parse_opmvv_format(opmvv: &str) -> Result<format::Opmvv, String> {
-    let tokens: Vec<&str> = opmvv.split(", ").collect();
+    let tokens: Vec<&str> = opmvv.split(',').map(str::trim).collect();
     if tokens.len() != 3 && tokens.len() != 4 {
         return Err(format!(
             "Expected format: 'vd, vs2, vs1, [vm]', got {} instead",
@@ -590,7 +610,7 @@ pub fn parse_opmvv_format(opmvv: &str) -> Result<format::Opmvv, String> {
 }
 
 pub fn parse_opmvv_maskless_format(opmvv: &str) -> Result<format::Opmvv, String> {
-    let tokens: Vec<&str> = opmvv.split(", ").collect();
+    let tokens: Vec<&str> = opmvv.split(',').map(str::trim).collect();
     if tokens.len() != 3 {
         return Err(format!(
             "Expected format: 'vd, vs2, vs1', got {} instead",
@@ -611,7 +631,7 @@ pub fn parse_opmvv_maskless_format(opmvv: &str) -> Result<format::Opmvv, String>
 }
 
 pub fn parse_opmvx_format(opmvx: &str) -> Result<format::Opmvx, String> {
-    let tokens: Vec<&str> = opmvx.split(", ").collect();
+    let tokens: Vec<&str> = opmvx.split(',').map(str::trim).collect();
     if tokens.len() != 3 && tokens.len() != 4 {
         return Err(format!(
             "Expected format: 'vd, vs2, rs1, [vm]', got {} instead",
@@ -638,7 +658,7 @@ pub fn parse_opmvx_format(opmvx: &str) -> Result<format::Opmvx, String> {
 }
 
 pub fn parse_opmvv_fma_format(opmvv: &str) -> Result<format::Opmvv, String> {
-    let tokens: Vec<&str> = opmvv.split(", ").collect();
+    let tokens: Vec<&str> = opmvv.split(',').map(str::trim).collect();
     if tokens.len() != 3 && tokens.len() != 4 {
         return Err(format!(
             "Expected format: 'vd, vs1, vs2, [vm]', got {} instead",
@@ -665,7 +685,7 @@ pub fn parse_opmvv_fma_format(opmvv: &str) -> Result<format::Opmvv, String> {
 }
 
 pub fn parse_opmvx_fma_format(opmvx: &str) -> Result<format::Opmvx, String> {
-    let tokens: Vec<&str> = opmvx.split(", ").collect();
+    let tokens: Vec<&str> = opmvx.split(',').map(str::trim).collect();
     if tokens.len() != 3 && tokens.len() != 4 {
         return Err(format!(
             "Expected format: 'vd, rs1, vs2, [vm]', got {} instead",
@@ -692,7 +712,7 @@ pub fn parse_opmvx_fma_format(opmvx: &str) -> Result<format::Opmvx, String> {
 }
 
 pub fn parse_vwxunary0_vmvxs_format(vwxunary0: &str) -> Result<format::Vwxunary0, String> {
-    let tokens: Vec<&str> = vwxunary0.split(", ").collect();
+    let tokens: Vec<&str> = vwxunary0.split(',').map(str::trim).collect();
     if tokens.len() != 2 {
         return Err(format!(
             "Expected format: 'rd, vs2', got {} instead",
@@ -712,7 +732,7 @@ pub fn parse_vwxunary0_vmvxs_format(vwxunary0: &str) -> Result<format::Vwxunary0
 }
 
 pub fn parse_vwxunary0_format(vwxunary0: &str) -> Result<format::Vwxunary0, String> {
-    let tokens: Vec<&str> = vwxunary0.split(", ").collect();
+    let tokens: Vec<&str> = vwxunary0.split(',').map(str::trim).collect();
     if tokens.len() != 2 && tokens.len() != 3 {
         return Err(format!(
             "Expected format: 'rd, vs2, [vm]', got {} instead",
@@ -738,7 +758,7 @@ pub fn parse_vwxunary0_format(vwxunary0: &str) -> Result<format::Vwxunary0, Stri
 }
 
 pub fn parse_vrxunary0_format(vrxunary0: &str) -> Result<format::Vrxunary0, String> {
-    let tokens: Vec<&str> = vrxunary0.split(", ").collect();
+    let tokens: Vec<&str> = vrxunary0.split(',').map(str::trim).collect();
     if tokens.len() != 2 {
         return Err(format!(
             "Expected format: 'vd, rs1', got {} instead",
@@ -758,7 +778,7 @@ pub fn parse_vrxunary0_format(vrxunary0: &str) -> Result<format::Vrxunary0, Stri
 }
 
 pub fn parse_vxunary0_format(vxunary0: &str) -> Result<format::Vxunary0, String> {
-    let tokens: Vec<&str> = vxunary0.split(", ").collect();
+    let tokens: Vec<&str> = vxunary0.split(',').map(str::trim).collect();
     if tokens.len() != 2 && tokens.len() != 3 {
         return Err(format!(
             "Expected format: 'vd, vs2, [vm]', got {} instead",
@@ -784,7 +804,7 @@ pub fn parse_vxunary0_format(vxunary0: &str) -> Result<format::Vxunary0, String>
 }
 
 pub fn parse_vmunary0_vidv_format(vmunary0: &str) -> Result<format::Vmunary0, String> {
-    let tokens: Vec<&str> = vmunary0.split(", ").collect();
+    let tokens: Vec<&str> = vmunary0.split(',').map(str::trim).collect();
     if tokens.len() != 1 && tokens.len() != 2 {
         return Err(format!(
             "Expected format: 'vd, [vm]', got {} instead",
@@ -809,7 +829,7 @@ pub fn parse_vmunary0_vidv_format(vmunary0: &str) -> Result<format::Vmunary0, St
 }
 
 pub fn parse_vmunary0_format(vmunary0: &str) -> Result<format::Vmunary0, String> {
-    let tokens: Vec<&str> = vmunary0.split(", ").collect();
+    let tokens: Vec<&str> = vmunary0.split(',').map(str::trim).collect();
     if tokens.len() != 2 && tokens.len() != 3 {
         return Err(format!(
             "Expected format: 'vd, vs2, [vm]', got {} instead",
@@ -835,7 +855,7 @@ pub fn parse_vmunary0_format(vmunary0: &str) -> Result<format::Vmunary0, String>
 }
 
 pub fn parse_opfvv_format(opfvv: &str) -> Result<format::Opfvv, String> {
-    let tokens: Vec<&str> = opfvv.split(", ").collect();
+    let tokens: Vec<&str> = opfvv.split(',').map(str::trim).collect();
     if tokens.len() != 3 && tokens.len() != 4 {
         return Err(format!(
             "Expected format: 'vd, vs2, vs1, [vm]', got {} instead",
@@ -862,7 +882,7 @@ pub fn parse_opfvv_format(opfvv: &str) -> Result<format::Opfvv, String> {
 }
 
 pub fn parse_opfvf_format(opfvf: &str) -> Result<format::Opfvf, String> {
-    let tokens: Vec<&str> = opfvf.split(", ").collect();
+    let tokens: Vec<&str> = opfvf.split(',').map(str::trim).collect();
     if tokens.len() != 3 && tokens.len() != 4 {
         return Err(format!(
             "Expected format: 'vd, vs2, rs1, [vm]', got {} instead",
@@ -884,7 +904,7 @@ pub fn parse_opfvf_format(opfvf: &str) -> Result<format::Opfvf, String> {
 }
 
 pub fn parse_opfvv_fma_format(opfvv: &str) -> Result<format::Opfvv, String> {
-    let tokens: Vec<&str> = opfvv.split(", ").collect();
+    let tokens: Vec<&str> = opfvv.split(',').map(str::trim).collect();
     if tokens.len() != 3 && tokens.len() != 4 {
         return Err(format!(
             "Expected format: 'vd, vs1, vs2, [vm]', got {} instead",
@@ -911,7 +931,7 @@ pub fn parse_opfvv_fma_format(opfvv: &str) -> Result<format::Opfvv, String> {
 }
 
 pub fn parse_opfvf_fma_format(opfvf: &str) -> Result<format::Opfvf, String> {
-    let tokens: Vec<&str> = opfvf.split(", ").collect();
+    let tokens: Vec<&str> = opfvf.split(',').map(str::trim).collect();
     if tokens.len() != 3 && tokens.len() != 4 {
         return Err(format!(
             "Expected format: 'vd, rs1, vs2, [vm]', got {} instead",
@@ -933,7 +953,7 @@ pub fn parse_opfvf_fma_format(opfvf: &str) -> Result<format::Opfvf, String> {
 }
 
 pub fn parse_vwfunary0_format(vwfunary0: &str) -> Result<format::Vwfunary0, String> {
-    let tokens: Vec<&str> = vwfunary0.split(", ").collect();
+    let tokens: Vec<&str> = vwfunary0.split(',').map(str::trim).collect();
     if tokens.len() != 2 {
         return Err(format!(
             "Expected format: 'rd, vs2', got {} instead",
@@ -953,7 +973,7 @@ pub fn parse_vwfunary0_format(vwfunary0: &str) -> Result<format::Vwfunary0, Stri
 }
 
 pub fn parse_vrfunary0_format(vrfunary0: &str) -> Result<format::Vrfunary0, String> {
-    let tokens: Vec<&str> = vrfunary0.split(", ").collect();
+    let tokens: Vec<&str> = vrfunary0.split(',').map(str::trim).collect();
     if tokens.len() != 2 {
         return Err(format!(
             "Expected format: 'vd, rs1', got {} instead",
@@ -973,7 +993,7 @@ pub fn parse_vrfunary0_format(vrfunary0: &str) -> Result<format::Vrfunary0, Stri
 }
 
 pub fn parse_vfunary0_format(vfunary0: &str) -> Result<format::Vfunary0, String> {
-    let tokens: Vec<&str> = vfunary0.split(", ").collect();
+    let tokens: Vec<&str> = vfunary0.split(',').map(str::trim).collect();
     if tokens.len() != 2 && tokens.len() != 3 {
         return Err(format!(
             "Expected format: 'vd, vs2, [vm]', got {} instead",
@@ -999,7 +1019,7 @@ pub fn parse_vfunary0_format(vfunary0: &str) -> Result<format::Vfunary0, String>
 }
 
 pub fn parse_vfunary1_format(vfunary1: &str) -> Result<format::Vfunary1, String> {
-    let tokens: Vec<&str> = vfunary1.split(", ").collect();
+    let tokens: Vec<&str> = vfunary1.split(',').map(str::trim).collect();
     if tokens.len() != 2 && tokens.len() != 3 {
         return Err(format!(
             "Expected format: 'vd, vs2, [vm]', got {} instead",
@@ -1092,13 +1112,10 @@ fn parse_operand(op: &str) -> Result<VectorOperand, String> {
 
 pub mod pseudo {
     pub fn parse_op_format(op: &str) -> Result<usize, String> {
-        let tokens: Vec<&str> = op.split(", ").collect();
+        let tokens: Vec<&str> = op.split(',').map(str::trim).collect();
 
-        if tokens.len() != 1  {
-            return Err(format!(
-                "Expected format: 'vreg', got {} instead",
-                op
-            ));
+        if tokens.len() != 1 {
+            return Err(format!("Expected format: 'vreg', got {} instead", op));
         }
 
         let reg1 = super::parse_operand(tokens[0])?.as_register()?;
@@ -1106,11 +1123,10 @@ pub mod pseudo {
         Ok(reg1)
     }
 
-
     pub fn parse_op_op_format(op_op: &str) -> Result<(usize, usize), String> {
-        let tokens: Vec<&str> = op_op.split(", ").collect();
+        let tokens: Vec<&str> = op_op.split(',').map(str::trim).collect();
 
-        if tokens.len() != 2  {
+        if tokens.len() != 2 {
             return Err(format!(
                 "Expected format: 'vreg1, vreg2', got {} instead",
                 op_op
@@ -1124,9 +1140,9 @@ pub mod pseudo {
     }
 
     pub fn parse_op_op_mask_format(op_op_mask: &str) -> Result<(usize, usize, bool), String> {
-        let tokens: Vec<&str> = op_op_mask.split(", ").collect();
+        let tokens: Vec<&str> = op_op_mask.split(',').map(str::trim).collect();
 
-        if tokens.len() != 2 && tokens.len() != 3  {
+        if tokens.len() != 2 && tokens.len() != 3 {
             return Err(format!(
                 "Expected format: 'vreg1, vreg2, [vm]', got {} instead",
                 op_op_mask
@@ -1147,9 +1163,9 @@ pub mod pseudo {
     }
 
     pub fn parse_op_op_xreg_format(op_op_xreg: &str) -> Result<(usize, usize, usize), String> {
-        let tokens: Vec<&str> = op_op_xreg.split(", ").collect();
+        let tokens: Vec<&str> = op_op_xreg.split(',').map(str::trim).collect();
 
-        if tokens.len() != 3  {
+        if tokens.len() != 3 {
             return Err(format!(
                 "Expected format: 'vreg1, vreg2, xreg', got {} instead",
                 op_op_xreg
@@ -1163,10 +1179,15 @@ pub mod pseudo {
         Ok((reg1, reg2, reg3))
     }
 
-    pub fn parse_op_op_xreg_mask_vd_nonzero_format(op_op_xreg_mask_vd_nonzero: &str) -> Result<(usize, usize, usize), String> {
-        let tokens: Vec<&str> = op_op_xreg_mask_vd_nonzero.split(", ").collect();
+    pub fn parse_op_op_xreg_mask_vd_nonzero_format(
+        op_op_xreg_mask_vd_nonzero: &str,
+    ) -> Result<(usize, usize, usize), String> {
+        let tokens: Vec<&str> = op_op_xreg_mask_vd_nonzero
+            .split(',')
+            .map(str::trim)
+            .collect();
 
-        if tokens.len() != 4  {
+        if tokens.len() != 4 {
             return Err(format!(
                 "Expected format: 'vreg1, vreg2, xreg, v0.t', got {} instead",
                 op_op_xreg_mask_vd_nonzero
@@ -1178,7 +1199,6 @@ pub mod pseudo {
             return Err("Expected vd != v0".to_owned());
         }
 
-
         let reg2 = super::parse_operand(tokens[1])?.as_register()?;
         let reg3 = super::integer::parse_operand(tokens[2])?;
         super::parse_operand(tokens[3])?.as_mask()?;
@@ -1186,10 +1206,12 @@ pub mod pseudo {
         Ok((reg1, reg2, reg3))
     }
 
-    pub fn parse_op_op_xreg_mask_temp_format(op_op_xreg_mask: &str) -> Result<(usize, usize, usize, usize), String> {
-        let tokens: Vec<&str> = op_op_xreg_mask.split(", ").collect();
+    pub fn parse_op_op_xreg_mask_temp_format(
+        op_op_xreg_mask: &str,
+    ) -> Result<(usize, usize, usize, usize), String> {
+        let tokens: Vec<&str> = op_op_xreg_mask.split(',').map(str::trim).collect();
 
-        if tokens.len() != 5  {
+        if tokens.len() != 5 {
             return Err(format!(
                 "Expected format: 'vreg1, vreg2, xreg, v0.t, vt', got {} instead",
                 op_op_xreg_mask
@@ -1205,10 +1227,12 @@ pub mod pseudo {
         Ok((reg1, reg2, xreg, reg3))
     }
 
-    pub fn parse_op_op_op_mask_format(op_op_op_mask: &str) -> Result<(usize, usize, usize, bool), String> {
-        let tokens: Vec<&str> = op_op_op_mask.split(", ").collect();
+    pub fn parse_op_op_op_mask_format(
+        op_op_op_mask: &str,
+    ) -> Result<(usize, usize, usize, bool), String> {
+        let tokens: Vec<&str> = op_op_op_mask.split(',').map(str::trim).collect();
 
-        if tokens.len() != 3 && tokens.len() != 4  {
+        if tokens.len() != 3 && tokens.len() != 4 {
             return Err(format!(
                 "Expected format: 'vreg1, vreg2, vreg3, [vm]', got {} instead",
                 op_op_op_mask
@@ -1229,10 +1253,12 @@ pub mod pseudo {
         Ok((reg1, reg2, reg3, vm))
     }
 
-    pub fn parse_op_op_imm_mask_format(op_op_imm_mask: &str) -> Result<(usize, usize, i32, bool), String> {
-        let tokens: Vec<&str> = op_op_imm_mask.split(", ").collect();
+    pub fn parse_op_op_imm_mask_format(
+        op_op_imm_mask: &str,
+    ) -> Result<(usize, usize, i32, bool), String> {
+        let tokens: Vec<&str> = op_op_imm_mask.split(',').map(str::trim).collect();
 
-        if tokens.len() != 3 && tokens.len() != 4  {
+        if tokens.len() != 3 && tokens.len() != 4 {
             return Err(format!(
                 "Expected format: 'vreg1, vreg2, imm, [vm]', got {} instead",
                 op_op_imm_mask

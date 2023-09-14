@@ -3,7 +3,7 @@ use eeric::prelude::*;
 use super::integer;
 
 pub fn parse_csrr_format(csrr: &str) -> Result<format::Csrr, String> {
-    let tokens: Vec<&str> = csrr.split(", ").collect();
+    let tokens: Vec<&str> = csrr.split(',').map(str::trim).collect();
 
     if tokens.len() != 3 {
         return Err(format!(
@@ -20,7 +20,7 @@ pub fn parse_csrr_format(csrr: &str) -> Result<format::Csrr, String> {
 }
 
 pub fn parse_csri_format(csri: &str) -> Result<format::Csri, String> {
-    let tokens: Vec<&str> = csri.split(", ").collect();
+    let tokens: Vec<&str> = csri.split(',').map(str::trim).collect();
 
     if tokens.len() != 3 {
         return Err(format!(
@@ -69,7 +69,7 @@ fn parse_operand(op: &str) -> Result<usize, String> {
 
 pub mod pseudo {
     pub fn parse_op_csr_format(op_csr: &str) -> Result<(usize, usize), String> {
-        let tokens: Vec<&str> = op_csr.split(", ").collect();
+        let tokens: Vec<&str> = op_csr.split(',').map(str::trim).collect();
 
         if tokens.len() != 2 {
             return Err(format!(
@@ -85,7 +85,7 @@ pub mod pseudo {
     }
 
     pub fn parse_csr_op_format(csr_op: &str) -> Result<(usize, usize), String> {
-        let tokens: Vec<&str> = csr_op.split(", ").collect();
+        let tokens: Vec<&str> = csr_op.split(',').map(str::trim).collect();
 
         if tokens.len() != 2 {
             return Err(format!(
