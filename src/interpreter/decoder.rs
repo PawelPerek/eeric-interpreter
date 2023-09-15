@@ -66,7 +66,7 @@ impl Decoder {
         } else if trimmed_line.starts_with('#') {
             match trimmed_line {
                 "#define" => {
-                    LineClassification::PreprocDirective(PreprocDirective::Define(todo!(), todo!()))
+                    return Err("#define directive not supported yet".to_owned())
                 }
                 _ => {
                     return Err(format!(
