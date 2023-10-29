@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use eeric::prelude::*;
+use eeric_core::prelude::*;
 
 pub fn parse_r4_format(r4: &str) -> Result<format::R4, String> {
     let tokens: Vec<&str> = r4.split(',').map(str::trim).collect();
@@ -87,10 +87,7 @@ pub fn parse_r_single_reg_format(r: &str) -> Result<format::R, String> {
     let tokens: Vec<&str> = r.split(',').map(str::trim).collect();
 
     if tokens.len() != 2 {
-        return Err(format!(
-            "Expected format: 'fd, fs1', got {} instead",
-            r
-        ));
+        return Err(format!("Expected format: 'fd, fs1', got {} instead", r));
     }
 
     let rd = parse_operand(tokens[0])?;
@@ -120,10 +117,7 @@ pub fn parse_r_single_reg_to_x_format(r: &str) -> Result<format::R, String> {
     let tokens: Vec<&str> = r.split(',').map(str::trim).collect();
 
     if tokens.len() != 2 {
-        return Err(format!(
-            "Expected format: 'rd, fs1', got {} instead",
-            r
-        ));
+        return Err(format!("Expected format: 'rd, fs1', got {} instead", r));
     }
 
     let rd = super::integer::parse_operand(tokens[0])?;
@@ -136,10 +130,7 @@ pub fn parse_r_single_reg_to_f_format(r: &str) -> Result<format::R, String> {
     let tokens: Vec<&str> = r.split(',').map(str::trim).collect();
 
     if tokens.len() != 2 {
-        return Err(format!(
-            "Expected format: 'fd, rs1', got {} instead",
-            r
-        ));
+        return Err(format!("Expected format: 'fd, rs1', got {} instead", r));
     }
 
     let rd = parse_operand(tokens[0])?;

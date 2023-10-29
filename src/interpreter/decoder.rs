@@ -3,7 +3,10 @@ mod operand;
 
 use std::{ascii, cmp::Ordering, collections::HashMap};
 
-use eeric::prelude::{format::*, *};
+use eeric_core::{
+    fuse,
+    prelude::{format::*, *},
+};
 use operand::{csr, float, integer, vector};
 use Instruction::*;
 
@@ -65,9 +68,7 @@ impl Decoder {
             LineClassification::Empty
         } else if trimmed_line.starts_with('#') {
             match trimmed_line {
-                "#define" => {
-                    return Err("#define directive not supported yet".to_owned())
-                }
+                "#define" => return Err("#define directive not supported yet".to_owned()),
                 _ => {
                     return Err(format!(
                         "Unrecognized preprocessor directive: {}",
@@ -113,8 +114,11 @@ impl Decoder {
 
         use csr::{parse_csri_format as csri, parse_csrr_format as csrr};
 
-        use float::{parse_r4_format as r4, parse_load_format as fl, parse_store_format as fs, parse_r_format as fr, parse_r_single_reg_format as frs,
-            parse_r_to_x_format as frx, parse_r_single_reg_to_x_format as frs_to_x, parse_r_single_reg_to_f_format as frs_to_f
+        use float::{
+            parse_load_format as fl, parse_r4_format as r4, parse_r_format as fr,
+            parse_r_single_reg_format as frs, parse_r_single_reg_to_f_format as frs_to_f,
+            parse_r_single_reg_to_x_format as frs_to_x, parse_r_to_x_format as frx,
+            parse_store_format as fs,
         };
 
         use vector::{
@@ -2297,12 +2301,21 @@ impl Decoder {
 
             // Pseudoinstructions
             "la" => {
-                let (rd, mem_addr) = integer::pseudo::parse_op_memory_label_format(op, memory_labels)?;
-                Fusion (
-                    Box::new(Auipc(U { rd, imm20: mem_addr >> 12 })),
-                    Box::new(Addi(I { rd, rs1: rd, imm12: mem_addr & 0xfff }))
-                )
-            },
+                let (rd, mem_addr) =
+                    integer::pseudo::parse_op_memory_label_format(op, memory_labels)?;
+
+                fuse![
+                    Auipc(U {
+                        rd,
+                        imm20: mem_addr >> 12,
+                    }),
+                    Addi(I {
+                        rd,
+                        rs1: rd,
+                        imm12: mem_addr & 0xfff,
+                    })
+                ]
+            }
             "nop" => Addi(I {
                 rd: 0,
                 rs1: 0,
@@ -2321,17 +2334,17 @@ impl Decoder {
                         rd: reg,
                         imm20: imm,
                     }),
-                    Ordering::Greater => Fusion(
-                        Box::new(Lui(U {
+                    Ordering::Greater => fuse![
+                        Lui(U {
                             rd: reg,
                             imm20: imm >> 12,
-                        })),
-                        Box::new(Addi(I {
+                        }),
+                        Addi(I {
                             rd: reg,
                             rs1: reg,
                             imm12: imm & 0xfff,
-                        })),
-                    ),
+                        }),
+                    ],
                 }
             }
             "mv" => {
@@ -2352,33 +2365,34 @@ impl Decoder {
             }
             "sext.b" => {
                 let (rd, rs1) = integer::pseudo::parse_op_op_format(op)?;
-                Fusion(
-                    Box::new(Slli(I {
+
+                fuse![
+                    Slli(I {
                         rd,
                         rs1,
                         imm12: 64 - 8,
-                    })),
-                    Box::new(Srai(I {
+                    }),
+                    Srai(I {
                         rd,
                         rs1,
                         imm12: 64 - 8,
-                    })),
-                )
+                    }),
+                ]
             }
             "sext.h" => {
                 let (rd, rs1) = integer::pseudo::parse_op_op_format(op)?;
-                Fusion(
-                    Box::new(Slli(I {
+                fuse![
+                    Slli(I {
                         rd,
                         rs1,
                         imm12: 64 - 16,
-                    })),
-                    Box::new(Srai(I {
+                    }),
+                    Srai(I {
                         rd,
                         rs1,
                         imm12: 64 - 16,
-                    })),
-                )
+                    }),
+                ]
             }
             "sext.w" => {
                 let (rd, rs1) = integer::pseudo::parse_op_op_format(op)?;
@@ -2394,33 +2408,35 @@ impl Decoder {
             }
             "zext.h" => {
                 let (rd, rs1) = integer::pseudo::parse_op_op_format(op)?;
-                Fusion(
-                    Box::new(Slli(I {
+
+                fuse![
+                    Slli(I {
                         rd,
                         rs1,
                         imm12: 64 - 16,
-                    })),
-                    Box::new(Srli(I {
+                    }),
+                    Srli(I {
                         rd,
                         rs1: rd,
                         imm12: 64 - 16,
-                    })),
-                )
+                    }),
+                ]
             }
             "zext.w" => {
                 let (rd, rs1) = integer::pseudo::parse_op_op_format(op)?;
-                Fusion(
-                    Box::new(Slli(I {
+
+                fuse![
+                    Slli(I {
                         rd,
                         rs1,
                         imm12: 64 - 32,
-                    })),
-                    Box::new(Srli(I {
+                    }),
+                    Srli(I {
                         rd,
                         rs1: rd,
                         imm12: 64 - 32,
-                    })),
-                )
+                    }),
+                ]
             }
             "seqz" => {
                 let (rd, rs1) = integer::pseudo::parse_op_op_format(op)?;
@@ -2607,32 +2623,34 @@ impl Decoder {
             "call" => {
                 let diff =
                     integer::pseudo::parse_label_format(op, instruction_labels, current_address)?;
-                Fusion(
-                    Box::new(Auipc(U {
+
+                fuse![
+                    Auipc(U {
                         rd: 1,
                         imm20: diff >> 12,
-                    })),
-                    Box::new(Jalr(I {
+                    }),
+                    Jalr(I {
                         rd: 1,
                         rs1: 1,
                         imm12: diff & 0xfff,
-                    })),
-                )
+                    }),
+                ]
             }
             "tail" => {
                 let diff =
                     integer::pseudo::parse_label_format(op, instruction_labels, current_address)?;
-                Fusion(
-                    Box::new(Auipc(U {
+
+                fuse![
+                    Auipc(U {
                         rd: 6,
                         imm20: diff >> 12,
-                    })),
-                    Box::new(Jalr(I {
+                    }),
+                    Jalr(I {
                         rd: 0,
                         rs1: 6,
                         imm12: diff & 0xfff,
-                    })),
-                )
+                    }),
+                ]
             }
             "rdinstret" => {
                 let rd = integer::pseudo::parse_op_format(op)?;
@@ -2892,83 +2910,79 @@ impl Decoder {
                 })
             }
             "vmsge.vx" => match vector::pseudo::parse_op_op_xreg_format(op) {
-                Ok((vd, vs2, rs1)) => Fusion(
-                    Box::new(Vmsltvx(Opivx {
+                Ok((vd, vs2, rs1)) => fuse![
+                    Vmsltvx(Opivx {
                         vd,
                         rs1,
                         vs2,
                         vm: false,
-                    })),
-                    Box::new(Vmnandmm(Opmvv {
+                    }),
+                    Vmnandmm(Opmvv {
                         dest: vd,
                         vs1: vd,
                         vs2: vd,
                         vm: false,
-                    })),
-                ),
+                    }),
+                ],
                 Err(fst_err) => match vector::pseudo::parse_op_op_xreg_mask_vd_nonzero_format(op) {
-                    Ok((vd, vs2, rs1)) => Fusion(
-                        Box::new(Vmsltvx(Opivx {
+                    Ok((vd, vs2, rs1)) => fuse![
+                        Vmsltvx(Opivx {
                             vd,
                             rs1,
                             vs2,
                             vm: true,
-                        })),
-                        Box::new(Vmxormm(Opmvv {
+                        }),
+                        Vmxormm(Opmvv {
                             dest: vd,
                             vs1: 0,
                             vs2: vd,
                             vm: false,
-                        })),
-                    ),
+                        }),
+                    ],
                     Err(snd_err) => match vector::pseudo::parse_op_op_xreg_mask_temp_format(op) {
                         Ok((vd, vs2, rs1, vt)) => {
                             if vd == 0 {
-                                Fusion(
-                                    Box::new(Vmsltvx(Opivx {
+                                fuse![
+                                    Vmsltvx(Opivx {
                                         vd: vt,
                                         rs1,
                                         vs2,
                                         vm: false,
-                                    })),
-                                    Box::new(Vmandnmm(Opmvv {
+                                    }),
+                                    Vmandnmm(Opmvv {
                                         dest: vd,
                                         vs1: vt,
                                         vs2: vd,
                                         vm: false,
-                                    })),
-                                )
+                                    }),
+                                ]
                             } else {
-                                Fusion(
-                                    Box::new(Vmsltvx(Opivx {
+                                fuse![
+                                    Vmsltvx(Opivx {
                                         vd: vt,
                                         rs1,
                                         vs2,
                                         vm: false,
-                                    })),
-                                    Box::new(Fusion(
-                                        Box::new(Vmandnmm(Opmvv {
-                                            dest: vt,
-                                            vs1: vt,
-                                            vs2: 0,
-                                            vm: false,
-                                        })),
-                                        Box::new(Fusion(
-                                            Box::new(Vmandnmm(Opmvv {
-                                                dest: vd,
-                                                vs1: 0,
-                                                vs2: vd,
-                                                vm: false,
-                                            })),
-                                            Box::new(Vmormm(Opmvv {
-                                                dest: vd,
-                                                vs1: vd,
-                                                vs2: vt,
-                                                vm: false,
-                                            })),
-                                        )),
-                                    )),
-                                )
+                                    }),
+                                    Vmandnmm(Opmvv {
+                                        dest: vt,
+                                        vs1: vt,
+                                        vs2: 0,
+                                        vm: false,
+                                    }),
+                                    Vmandnmm(Opmvv {
+                                        dest: vd,
+                                        vs1: 0,
+                                        vs2: vd,
+                                        vm: false,
+                                    }),
+                                    Vmormm(Opmvv {
+                                        dest: vd,
+                                        vs1: vd,
+                                        vs2: vt,
+                                        vm: false,
+                                    }),
+                                ]
                             }
                         }
                         Err(trd_err) => {
@@ -2978,83 +2992,79 @@ impl Decoder {
                 },
             },
             "vmsgeu.vx" => match vector::pseudo::parse_op_op_xreg_format(op) {
-                Ok((vd, vs2, rs1)) => Fusion(
-                    Box::new(Vmsltuvx(Opivx {
+                Ok((vd, vs2, rs1)) => fuse![
+                    Vmsltuvx(Opivx {
                         vd,
                         rs1,
                         vs2,
                         vm: false,
-                    })),
-                    Box::new(Vmnandmm(Opmvv {
+                    }),
+                    Vmnandmm(Opmvv {
                         dest: vd,
                         vs1: vd,
                         vs2: vd,
                         vm: false,
-                    })),
-                ),
+                    })
+                ],
                 Err(fst_err) => match vector::pseudo::parse_op_op_xreg_mask_vd_nonzero_format(op) {
-                    Ok((vd, vs2, rs1)) => Fusion(
-                        Box::new(Vmsltuvx(Opivx {
+                    Ok((vd, vs2, rs1)) => fuse![
+                        Vmsltuvx(Opivx {
                             vd,
                             rs1,
                             vs2,
                             vm: true,
-                        })),
-                        Box::new(Vmxormm(Opmvv {
+                        }),
+                        Vmxormm(Opmvv {
                             dest: vd,
                             vs1: 0,
                             vs2: vd,
                             vm: false,
-                        })),
-                    ),
+                        })
+                    ],
                     Err(snd_err) => match vector::pseudo::parse_op_op_xreg_mask_temp_format(op) {
                         Ok((vd, vs2, rs1, vt)) => {
                             if vd == 0 {
-                                Fusion(
-                                    Box::new(Vmsltuvx(Opivx {
+                                fuse![
+                                    Vmsltuvx(Opivx {
                                         vd: vt,
                                         rs1,
                                         vs2,
                                         vm: false,
-                                    })),
-                                    Box::new(Vmandnmm(Opmvv {
+                                    }),
+                                    Vmandnmm(Opmvv {
                                         dest: vd,
                                         vs1: vt,
                                         vs2: vd,
                                         vm: false,
-                                    })),
-                                )
+                                    }),
+                                ]
                             } else {
-                                Fusion(
-                                    Box::new(Vmsltuvx(Opivx {
+                                fuse![
+                                    Vmsltuvx(Opivx {
                                         vd: vt,
                                         rs1,
                                         vs2,
                                         vm: false,
-                                    })),
-                                    Box::new(Fusion(
-                                        Box::new(Vmandnmm(Opmvv {
-                                            dest: vt,
-                                            vs1: vt,
-                                            vs2: 0,
-                                            vm: false,
-                                        })),
-                                        Box::new(Fusion(
-                                            Box::new(Vmandnmm(Opmvv {
-                                                dest: vd,
-                                                vs1: 0,
-                                                vs2: vd,
-                                                vm: false,
-                                            })),
-                                            Box::new(Vmormm(Opmvv {
-                                                dest: vd,
-                                                vs1: vd,
-                                                vs2: vt,
-                                                vm: false,
-                                            })),
-                                        )),
-                                    )),
-                                )
+                                    }),
+                                    Vmandnmm(Opmvv {
+                                        dest: vt,
+                                        vs1: vt,
+                                        vs2: 0,
+                                        vm: false,
+                                    }),
+                                    Vmandnmm(Opmvv {
+                                        dest: vd,
+                                        vs1: 0,
+                                        vs2: vd,
+                                        vm: false,
+                                    }),
+                                    Vmormm(Opmvv {
+                                        dest: vd,
+                                        vs1: vd,
+                                        vs2: vt,
+                                        vm: false,
+                                    })
+                                ]
                             }
                         }
                         Err(trd_err) => {
@@ -3212,5 +3222,49 @@ mod tests {
             .map(|mnemonic| (mnemonic, Decoder::rename(mnemonic)))
             .iter()
             .for_each(|(old, new)| assert_ne!(old, new));
+    }
+
+    #[test]
+    fn la_works() {
+        let mut memory_labels = HashMap::new();
+
+        memory_labels.insert("to_copy".to_owned(), 12);
+
+        let instruction =
+            Decoder::decode_text_section("la x1, to_copy", &HashMap::new(), &memory_labels, 0);
+
+        assert_eq!(
+            instruction,
+            Ok(fuse![
+                Auipc(U { rd: 1, imm20: 0 }),
+                Addi(I {
+                    rd: 1,
+                    rs1: 1,
+                    imm12: 12
+                })
+            ])
+        );
+    }
+
+    #[test]
+    fn la_works_far() {
+        let mut memory_labels = HashMap::new();
+
+        memory_labels.insert("to_copy".to_owned(), 5000);
+
+        let instruction =
+            Decoder::decode_text_section("la x1, to_copy", &HashMap::new(), &memory_labels, 0);
+
+        assert_eq!(
+            instruction,
+            Ok(fuse![
+                Auipc(U { rd: 1, imm20: 1 }),
+                Addi(I {
+                    rd: 1,
+                    rs1: 1,
+                    imm12: 904
+                })
+            ])
+        );
     }
 }

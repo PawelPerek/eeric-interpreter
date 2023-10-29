@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use eeric::prelude::*;
+use eeric_core::prelude::*;
 
 pub fn parse_r_format(r: &str) -> Result<format::R, String> {
     let tokens: Vec<&str> = r.split(',').map(str::trim).collect();
@@ -341,7 +341,7 @@ pub mod pseudo {
 
     pub fn parse_op_memory_label_format(
         op_label: &str,
-        memory_labels: &HashMap<String, usize>
+        memory_labels: &HashMap<String, usize>,
     ) -> Result<(usize, i32), String> {
         let tokens: Vec<&str> = op_label.split(',').map(str::trim).collect();
 

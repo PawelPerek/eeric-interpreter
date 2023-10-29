@@ -1,4 +1,4 @@
-use eeric::prelude::*;
+use eeric_core::prelude::*;
 
 use super::integer;
 

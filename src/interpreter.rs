@@ -1,6 +1,6 @@
 mod decoder;
 
-use eeric::prelude::*;
+use eeric_core::prelude::*;
 use std::collections::HashMap;
 
 use decoder::{Decoder, LineClassification};
@@ -109,6 +109,8 @@ impl Interpreter {
 
 #[cfg(test)]
 mod tests {
+    use eeric_core::fuse;
+
     use super::*;
 
     #[test]
@@ -123,6 +125,7 @@ mod tests {
             ld a0, .hw1(x0)
             ld a0, .hw2(x0)
             ld a0, .hw3(x0)
+            la a1, .hw2
         .data
         .hw1:
             .float 3.141
@@ -151,7 +154,7 @@ mod tests {
                 Instruction::Bne(format::S {
                     rs1: 1,
                     rs2: 0,
-                    imm12: -8
+                    imm12: -4
                 }),
                 Instruction::Ld(format::I {
                     rd: 10,
@@ -167,17 +170,29 @@ mod tests {
                     rd: 10,
                     rs1: 0,
                     imm12: 7
-                })
+                }),
+                fuse![
+                    Instruction::Auipc(format::U { rd: 11, imm20: 0 }),
+                    Instruction::Addi(format::I {
+                        rd: 11,
+                        rs1: 11,
+                        imm12: 4
+                    })
+                ]
             ]
         );
 
         assert_eq!(
             compilation_result.instructions_addresses,
-            vec![1, 4, 5, 6, 7, 8]
+            vec![1, 4, 5, 6, 7, 8, 9]
         );
 
         assert_eq!(
-            compilation_result.memory.snapshot().into_iter().collect::<Vec<_>>(),
+            compilation_result
+                .memory
+                .snapshot()
+                .into_iter()
+                .collect::<Vec<_>>(),
             vec![37, 6, 73, 64, 97, 98, 99, 100, 101, 102, 0, 0]
         );
     }
